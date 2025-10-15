@@ -11,6 +11,11 @@
 
 set -e
 
+# Detect script location and repo root
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+REPO_ROOT=$(dirname "${SCRIPT_DIR}")
+PYTORCH_ROOT="${REPO_ROOT}/pytorch"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -143,6 +148,11 @@ fi
 
 echo -e "${GREEN}Building PyTorch C++ libraries for Linux${NC}"
 
+# Change to PyTorch directory if not already there
+if [ "$(pwd)" != "${PYTORCH_ROOT}" ]; then
+    cd "${PYTORCH_ROOT}"
+fi
+
 # Detect architecture
 ARCH=$(uname -m)
 echo -e "${GREEN}Detected architecture: ${ARCH}${NC}"
@@ -189,7 +199,7 @@ fi
 
 # Set up build directory
 CAFFE2_ROOT="$(pwd)"
-BUILD_ROOT="${BUILD_ROOT:-${CAFFE2_ROOT}/target/${TARGET_TRIPLE}}"
+BUILD_ROOT="${BUILD_ROOT:-${REPO_ROOT}/target/${TARGET_TRIPLE}}"
 INSTALL_PREFIX="${BUILD_ROOT}"
 
 if [ $CLEAN_BUILD -eq 1 ]; then
