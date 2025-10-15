@@ -360,15 +360,6 @@ Enable verbose output for debugging:
 - OpenCV, MPI, GFLAGS
 - Full JIT compiler (lite interpreter mode)
 
-## Contributing
-
-When modifying build scripts:
-
-1. Test on the target platform before committing
-2. Maintain consistent command-line interface across scripts
-3. Update both README.md and CLAUDE.md if changing behavior
-4. Preserve the target triple mapping in build.sh
-
 ## License
 
 These build scripts are dedicated to the public domain under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/).
