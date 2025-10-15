@@ -377,6 +377,3 @@ To the extent possible under law, the author(s) have waived all copyright and re
 
 PyTorch itself is licensed under the BSD-3-Clause license. See the [PyTorch repository](https://github.com/pytorch/pytorch) for details.
 
-## Acknowledgments
-
-Built for cross-platform PyTorch deployment. Inspired by the need for static PyTorch builds in mobile and embedded applications.
