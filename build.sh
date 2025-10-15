@@ -106,80 +106,66 @@ case "$TARGET" in
     # macOS targets
     aarch64-apple-darwin)
         echo -e "${GREEN}Building for macOS (Apple Silicon)${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-macos.sh" "${BUILD_ARGS[@]}"
         ;;
     x86_64-apple-darwin)
         echo -e "${GREEN}Building for macOS (Intel)${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-macos.sh" "${BUILD_ARGS[@]}"
         ;;
 
     # iOS targets
     aarch64-apple-ios)
         echo -e "${GREEN}Building for iOS device${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-ios.sh" --device "${BUILD_ARGS[@]}"
         ;;
     aarch64-apple-ios-sim)
         echo -e "${GREEN}Building for iOS simulator (Apple Silicon)${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-ios.sh" --simulator-arm64 "${BUILD_ARGS[@]}"
         ;;
     x86_64-apple-ios-sim)
         echo -e "${GREEN}Building for iOS simulator (Intel)${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-ios.sh" --simulator "${BUILD_ARGS[@]}"
         ;;
     arm64_32-apple-watchos)
         echo -e "${GREEN}Building for watchOS${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-ios.sh" --watchos "${BUILD_ARGS[@]}"
         ;;
 
     # Android targets
     aarch64-linux-android)
         echo -e "${GREEN}Building for Android arm64-v8a${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-android.sh" --abi arm64-v8a "${BUILD_ARGS[@]}"
         ;;
     armv7-linux-androideabi)
         echo -e "${GREEN}Building for Android armeabi-v7a${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-android.sh" --abi armeabi-v7a "${BUILD_ARGS[@]}"
         ;;
     x86_64-linux-android)
         echo -e "${GREEN}Building for Android x86_64${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-android.sh" --abi x86_64 "${BUILD_ARGS[@]}"
         ;;
     i686-linux-android)
         echo -e "${GREEN}Building for Android x86${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-android.sh" --abi x86 "${BUILD_ARGS[@]}"
         ;;
 
     # Linux targets
     x86_64-unknown-linux-gnu)
         echo -e "${GREEN}Building for Linux x86_64${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-linux.sh" "${BUILD_ARGS[@]}"
         ;;
     aarch64-unknown-linux-gnu)
         echo -e "${GREEN}Building for Linux ARM64${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-linux.sh" "${BUILD_ARGS[@]}"
         ;;
 
     # Windows targets
     x86_64-pc-windows-msvc)
         echo -e "${GREEN}Building for Windows x64 (MSVC)${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-windows.sh" --arch x64 "${BUILD_ARGS[@]}"
         ;;
     i686-pc-windows-msvc)
         echo -e "${GREEN}Building for Windows x86 (MSVC)${NC}"
-        cd "${SCRIPT_DIR}/pytorch"
         exec "${SCRIPT_DIR}/build-windows.sh" --arch x86 "${BUILD_ARGS[@]}"
         ;;
 

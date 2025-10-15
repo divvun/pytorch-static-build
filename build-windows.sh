@@ -18,7 +18,7 @@ set -e
 
 # Detect script location and repo root
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-REPO_ROOT=$(dirname "${SCRIPT_DIR}")
+REPO_ROOT="${SCRIPT_DIR}"
 PYTORCH_ROOT="${REPO_ROOT}/pytorch"
 
 # Colors for output
