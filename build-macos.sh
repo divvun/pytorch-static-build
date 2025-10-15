@@ -109,12 +109,6 @@ if ! command -v uv &> /dev/null; then
     exit 1
 fi
 
-# Fetch optional dependencies
-if [ ! -f "third_party/eigen/CMakeLists.txt" ]; then
-    echo -e "${YELLOW}Fetching optional Eigen dependency...${NC}"
-    python tools/optional_submodules.py checkout_eigen
-fi
-
 echo -e "${GREEN}Building PyTorch C++ libraries for macOS${NC}"
 
 # Detect architecture
@@ -165,6 +159,12 @@ echo -e "${YELLOW}Installing Python dependencies with uv...${NC}"
 uv pip install pyyaml setuptools typing-extensions 2>/dev/null || {
     echo -e "${YELLOW}Warning: Some dependencies failed to install${NC}"
 }
+
+# Fetch optional dependencies
+if [ ! -f "third_party/eigen/CMakeLists.txt" ]; then
+    echo -e "${YELLOW}Fetching optional Eigen dependency...${NC}"
+    "$PYTHON" tools/optional_submodules.py checkout_eigen
+fi
 
 # Determine target triple
 if [ "${ARCH}" = "arm64" ]; then
