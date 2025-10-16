@@ -103,7 +103,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --help               Show this help message"
             echo ""
             echo "Requirements:"
-            echo "  clang, clang++, cmake, ninja, uv"
+            echo "  clang, clang++, cmake, ninja, protoc, uv"
             exit 0
             ;;
         *)
@@ -143,6 +143,12 @@ fi
 if ! command -v cmake &> /dev/null; then
     echo -e "${RED}Error: cmake not found${NC}"
     echo "Install it with your package manager (e.g., apt install cmake)"
+    exit 1
+fi
+
+if ! command -v protoc &> /dev/null; then
+    echo -e "${RED}Error: protoc not found${NC}"
+    echo "Install it with your package manager (e.g., apt install protobuf-compiler)"
     exit 1
 fi
 
@@ -271,6 +277,8 @@ CMAKE_ARGS+=("-DUSE_GFLAGS=OFF")
 CMAKE_ARGS+=("-DUSE_OPENCV=OFF")
 CMAKE_ARGS+=("-DUSE_MPI=OFF")
 CMAKE_ARGS+=("-DUSE_KINETO=OFF")
+CMAKE_ARGS+=("-DUSE_MKLDNN=OFF")
+CMAKE_ARGS+=("-DUSE_PROF=OFF")
 CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=OFF")
 
 # Performance: use mimalloc allocator
