@@ -291,9 +291,23 @@ CMAKE_ARGS+=("-DUSE_MPI=OFF")
 CMAKE_ARGS+=("-DUSE_KINETO=OFF")
 CMAKE_ARGS+=("-DUSE_MKLDNN=OFF")
 CMAKE_ARGS+=("-DUSE_PROF=OFF")
-CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=ON")
-CMAKE_ARGS+=("-Dprotobuf_BUILD_PROTOC_BINARIES=OFF")
-CMAKE_ARGS+=("-DCAFFE2_CUSTOM_PROTOC_EXECUTABLE=$(which protoc)")
+
+# Check for custom-built Protobuf
+CUSTOM_PROTOC="${INSTALL_PREFIX}/bin/protoc"
+CUSTOM_PROTOBUF_LIB="${INSTALL_PREFIX}/lib/libprotobuf.a"
+CUSTOM_PROTOBUF_INCLUDE="${INSTALL_PREFIX}/include"
+if [ -f "${CUSTOM_PROTOC}" ] && [ -f "${CUSTOM_PROTOBUF_LIB}" ]; then
+    echo -e "${GREEN}Using custom-built static Protobuf from ${CUSTOM_PROTOBUF_LIB}${NC}"
+    CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=OFF")
+    CMAKE_ARGS+=("-DCAFFE2_CUSTOM_PROTOC_EXECUTABLE=${CUSTOM_PROTOC}")
+    CMAKE_ARGS+=("-DProtobuf_PROTOC_EXECUTABLE=${CUSTOM_PROTOC}")
+    CMAKE_ARGS+=("-DProtobuf_LIBRARY=${CUSTOM_PROTOBUF_LIB}")
+    CMAKE_ARGS+=("-DProtobuf_INCLUDE_DIR=${CUSTOM_PROTOBUF_INCLUDE}")
+else
+    # Fallback: build protobuf from source (will likely fail - run build-protobuf.sh first!)
+    echo -e "${YELLOW}Warning: Custom protobuf not found, will try to build from source${NC}"
+    CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=ON")
+fi
 
 # Performance: use mimalloc allocator
 CMAKE_ARGS+=("-DUSE_MIMALLOC=ON")
@@ -317,6 +331,11 @@ if [ -f "${CUSTOM_OPENMP_LIB}" ]; then
     echo "OpenMP:             custom static (${CUSTOM_OPENMP_LIB})"
 else
     echo "OpenMP:             system (USE_OPENMP=${USE_OPENMP})"
+fi
+if [ -f "${CUSTOM_PROTOBUF_LIB}" ]; then
+    echo "Protobuf:           custom static (${CUSTOM_PROTOBUF_LIB})"
+else
+    echo "Protobuf:           build from source"
 fi
 echo "BUILD_LITE:         ${BUILD_LITE_INTERPRETER}"
 echo -e "${GREEN}====================================${NC}"

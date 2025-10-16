@@ -365,7 +365,29 @@ CMAKE_ARGS+=("-DUSE_OPENMP=OFF")
 CMAKE_ARGS+=("-DUSE_KINETO=OFF")
 CMAKE_ARGS+=("-DUSE_MKLDNN=OFF")
 CMAKE_ARGS+=("-DUSE_PROF=OFF")
-CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=ON")
+
+# Protobuf - Android needs host protoc for cross-compilation
+# Check for custom-built Protobuf (should use Linux host protoc)
+HOST_PROTOC="${REPO_ROOT}/target/x86_64-unknown-linux-gnu/bin/protoc"
+if [ ! -f "${HOST_PROTOC}" ]; then
+    HOST_PROTOC="${REPO_ROOT}/target/aarch64-unknown-linux-gnu/bin/protoc"
+fi
+
+CUSTOM_PROTOBUF_LIB="${INSTALL_PREFIX}/lib/libprotobuf.a"
+CUSTOM_PROTOBUF_INCLUDE="${INSTALL_PREFIX}/include"
+
+if [ -f "${HOST_PROTOC}" ] && [ -f "${CUSTOM_PROTOBUF_LIB}" ]; then
+    echo -e "${GREEN}Using custom-built static Protobuf with host protoc${NC}"
+    CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=OFF")
+    CMAKE_ARGS+=("-DCAFFE2_CUSTOM_PROTOC_EXECUTABLE=${HOST_PROTOC}")
+    CMAKE_ARGS+=("-DProtobuf_PROTOC_EXECUTABLE=${HOST_PROTOC}")
+    CMAKE_ARGS+=("-DProtobuf_LIBRARY=${CUSTOM_PROTOBUF_LIB}")
+    CMAKE_ARGS+=("-DProtobuf_INCLUDE_DIR=${CUSTOM_PROTOBUF_INCLUDE}")
+else
+    # Fallback: build from source (will automatically use host protoc)
+    echo -e "${YELLOW}Warning: Custom protobuf not found, will build from source${NC}"
+    CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=ON")
+fi
 
 # Performance: use mimalloc allocator
 CMAKE_ARGS+=("-DUSE_MIMALLOC=ON")
