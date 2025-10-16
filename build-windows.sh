@@ -213,10 +213,10 @@ else
     TARGET_TRIPLE="i686-pc-windows-msvc"
 fi
 
-# Set up build directory
+# Set up build and install directories
 CAFFE2_ROOT="$(pwd)"
-BUILD_ROOT="${BUILD_ROOT:-${REPO_ROOT}/target/${TARGET_TRIPLE}}"
-INSTALL_PREFIX="${BUILD_ROOT}"
+INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}"
+BUILD_ROOT="${INSTALL_PREFIX}/build/pytorch"
 
 if [ $CLEAN_BUILD -eq 1 ]; then
     echo -e "${YELLOW}Cleaning build directory...${NC}"
