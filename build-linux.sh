@@ -295,18 +295,18 @@ CMAKE_ARGS+=("-DUSE_PROF=OFF")
 # Check for custom-built Protobuf
 CUSTOM_PROTOC="${INSTALL_PREFIX}/bin/protoc"
 CUSTOM_PROTOBUF_LIB="${INSTALL_PREFIX}/lib/libprotobuf.a"
-CUSTOM_PROTOBUF_INCLUDE="${INSTALL_PREFIX}/include"
+CUSTOM_PROTOBUF_CMAKE_DIR="${INSTALL_PREFIX}/lib/cmake/protobuf"
 if [ -f "${CUSTOM_PROTOC}" ] && [ -f "${CUSTOM_PROTOBUF_LIB}" ]; then
     echo -e "${GREEN}Using custom-built static Protobuf from ${CUSTOM_PROTOBUF_LIB}${NC}"
     CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=OFF")
     CMAKE_ARGS+=("-DCAFFE2_CUSTOM_PROTOC_EXECUTABLE=${CUSTOM_PROTOC}")
     CMAKE_ARGS+=("-DProtobuf_PROTOC_EXECUTABLE=${CUSTOM_PROTOC}")
-    CMAKE_ARGS+=("-DProtobuf_LIBRARY=${CUSTOM_PROTOBUF_LIB}")
-    CMAKE_ARGS+=("-DProtobuf_INCLUDE_DIR=${CUSTOM_PROTOBUF_INCLUDE}")
+    # Point find_package(Protobuf CONFIG) to our custom protobuf
+    CMAKE_ARGS+=("-DProtobuf_DIR=${CUSTOM_PROTOBUF_CMAKE_DIR}")
 else
-    # Fallback: build protobuf from source (will likely fail - run build-protobuf.sh first!)
-    echo -e "${YELLOW}Warning: Custom protobuf not found, will try to build from source${NC}"
-    CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=ON")
+    echo -e "${RED}Error: Custom protobuf not found!${NC}"
+    echo "Build protobuf first with: ./build-protobuf.sh --target ${TARGET_TRIPLE}"
+    exit 1
 fi
 
 # Performance: use mimalloc allocator

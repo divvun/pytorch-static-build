@@ -374,19 +374,20 @@ if [ ! -f "${HOST_PROTOC}" ]; then
 fi
 
 CUSTOM_PROTOBUF_LIB="${INSTALL_PREFIX}/lib/libprotobuf.a"
-CUSTOM_PROTOBUF_INCLUDE="${INSTALL_PREFIX}/include"
+CUSTOM_PROTOBUF_CMAKE_DIR="${INSTALL_PREFIX}/lib/cmake/protobuf"
 
 if [ -f "${HOST_PROTOC}" ] && [ -f "${CUSTOM_PROTOBUF_LIB}" ]; then
     echo -e "${GREEN}Using custom-built static Protobuf with host protoc${NC}"
     CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=OFF")
     CMAKE_ARGS+=("-DCAFFE2_CUSTOM_PROTOC_EXECUTABLE=${HOST_PROTOC}")
     CMAKE_ARGS+=("-DProtobuf_PROTOC_EXECUTABLE=${HOST_PROTOC}")
-    CMAKE_ARGS+=("-DProtobuf_LIBRARY=${CUSTOM_PROTOBUF_LIB}")
-    CMAKE_ARGS+=("-DProtobuf_INCLUDE_DIR=${CUSTOM_PROTOBUF_INCLUDE}")
+    # Point find_package(Protobuf CONFIG) to our custom protobuf
+    CMAKE_ARGS+=("-DProtobuf_DIR=${CUSTOM_PROTOBUF_CMAKE_DIR}")
 else
-    # Fallback: build from source (will automatically use host protoc)
-    echo -e "${YELLOW}Warning: Custom protobuf not found, will build from source${NC}"
-    CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=ON")
+    echo -e "${RED}Error: Custom protobuf not found!${NC}"
+    echo "Build host protoc first: ./build-protobuf.sh --target x86_64-unknown-linux-gnu (or aarch64-unknown-linux-gnu)"
+    echo "Then build Android protobuf: ./build-protobuf.sh --target ${TARGET_TRIPLE}"
+    exit 1
 fi
 
 # Performance: use mimalloc allocator
