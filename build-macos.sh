@@ -29,7 +29,7 @@ BUILD_SHARED_LIBS=0  # Build static libraries by default
 USE_DISTRIBUTED=0
 USE_OPENMP=1
 USE_PYTORCH_METAL=1
-BUILD_LITE_INTERPRETER=1
+BUILD_LITE_INTERPRETER=0
 VERBOSE=0
 
 # Parse command line arguments
@@ -93,8 +93,8 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Feature Options:"
             echo "  --distributed        Enable distributed training support (disabled by default on macOS)"
-            echo "  --lite               Build Lite Interpreter (default)"
-            echo "  --full               Build full interpreter"
+            echo "  --lite               Build Lite Interpreter"
+            echo "  --full               Build full interpreter (default)"
             echo "  --verbose, -v        Verbose output"
             echo "  --help               Show this help message"
             exit 0

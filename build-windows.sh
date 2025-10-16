@@ -32,7 +32,7 @@ BUILD_TYPE="Release"  # Release, Debug, MinSizeRel, RelWithDebInfo
 CLEAN_BUILD=1  # Clean by default for reliable builds
 BUILD_SHARED_LIBS=0  # Build static libraries by default
 USE_OPENMP=1
-BUILD_LITE_INTERPRETER=1
+BUILD_LITE_INTERPRETER=0
 VERBOSE=0
 ARCH="x64"  # x64 or x86
 
@@ -109,8 +109,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --minsize            Build for minimum size"
             echo ""
             echo "Feature Options:"
-            echo "  --lite               Build Lite Interpreter (default)"
-            echo "  --full               Build full interpreter"
+            echo "  --lite               Build Lite Interpreter"
+            echo "  --full               Build full interpreter (default)"
             echo "  --verbose, -v        Verbose output"
             echo "  --help               Show this help message"
             echo ""

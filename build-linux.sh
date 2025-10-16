@@ -28,7 +28,7 @@ CLEAN_BUILD=1  # Clean by default for reliable builds
 BUILD_SHARED_LIBS=0  # Build static libraries by default
 USE_DISTRIBUTED=1  # Enable distributed by default on Linux
 USE_OPENMP=1
-BUILD_LITE_INTERPRETER=1
+BUILD_LITE_INTERPRETER=0
 VERBOSE=0
 
 # Parse command line arguments
@@ -97,8 +97,8 @@ while [[ $# -gt 0 ]]; do
             echo "Feature Options:"
             echo "  --distributed        Enable distributed training support (default)"
             echo "  --no-distributed     Disable distributed training support"
-            echo "  --lite               Build Lite Interpreter (default)"
-            echo "  --full               Build full interpreter"
+            echo "  --lite               Build Lite Interpreter"
+            echo "  --full               Build full interpreter (default)"
             echo "  --verbose, -v        Verbose output"
             echo "  --help               Show this help message"
             echo ""

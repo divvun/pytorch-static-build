@@ -30,7 +30,7 @@ BUILD_TYPE="MinSizeRel"  # MinSizeRel, Release, Debug, RelWithDebInfo
 CLEAN_BUILD=1
 USE_PYTORCH_METAL=1
 USE_COREML_DELEGATE=0
-BUILD_LITE_INTERPRETER=1
+BUILD_LITE_INTERPRETER=0
 ENABLE_BITCODE=0
 VERBOSE=0
 
@@ -126,8 +126,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --no-metal           Disable Metal support"
             echo "  --coreml             Enable Core ML delegate"
             echo "  --bitcode            Enable bitcode embedding"
-            echo "  --lite               Build Lite Interpreter (default)"
-            echo "  --full               Build full interpreter"
+            echo "  --lite               Build Lite Interpreter"
+            echo "  --full               Build full interpreter (default)"
             echo "  --verbose, -v        Verbose output"
             echo "  --help               Show this help message"
             exit 0

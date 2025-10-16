@@ -28,7 +28,7 @@ ANDROID_ABI="arm64-v8a"  # arm64-v8a, armeabi-v7a, x86, x86_64
 ANDROID_NATIVE_API_LEVEL="21"  # Minimum Android API level
 BUILD_TYPE="Release"  # Release, Debug, MinSizeRel, RelWithDebInfo
 CLEAN_BUILD=1
-BUILD_LITE_INTERPRETER=1
+BUILD_LITE_INTERPRETER=0
 USE_VULKAN=0
 USE_VULKAN_FP16_INFERENCE=0
 ANDROID_STL_SHARED=0  # Use static STL by default
@@ -128,8 +128,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --vulkan             Enable Vulkan support"
             echo "  --vulkan-fp16        Enable Vulkan with FP16 inference"
             echo "  --stl-shared         Use shared C++ STL (static by default)"
-            echo "  --lite               Build Lite Interpreter (default)"
-            echo "  --full               Build full interpreter"
+            echo "  --lite               Build Lite Interpreter"
+            echo "  --full               Build full interpreter (default)"
             echo "  --verbose, -v        Verbose output"
             echo "  --help               Show this help message"
             echo ""
