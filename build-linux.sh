@@ -258,7 +258,19 @@ CMAKE_ARGS+=("-DBUILD_TEST=OFF")
 CMAKE_ARGS+=("-DBUILD_BINARY=OFF")
 
 # Linux-specific features
-if [ $USE_OPENMP -eq 1 ]; then
+# Check for custom-built OpenMP
+CUSTOM_OPENMP_LIB="${INSTALL_PREFIX}/lib/libomp.a"
+CUSTOM_OPENMP_INCLUDE="${INSTALL_PREFIX}/include"
+if [ $USE_OPENMP -eq 1 ] && [ -f "${CUSTOM_OPENMP_LIB}" ]; then
+    echo -e "${GREEN}Using custom-built static OpenMP from ${CUSTOM_OPENMP_LIB}${NC}"
+    CMAKE_ARGS+=("-DUSE_OPENMP=ON")
+    # Provide hints to FindOpenMP.cmake
+    CMAKE_ARGS+=("-DOpenMP_C_FLAGS=-fopenmp -I${CUSTOM_OPENMP_INCLUDE}")
+    CMAKE_ARGS+=("-DOpenMP_CXX_FLAGS=-fopenmp -I${CUSTOM_OPENMP_INCLUDE}")
+    CMAKE_ARGS+=("-DOpenMP_C_LIB_NAMES=omp")
+    CMAKE_ARGS+=("-DOpenMP_CXX_LIB_NAMES=omp")
+    CMAKE_ARGS+=("-DOpenMP_omp_LIBRARY=${CUSTOM_OPENMP_LIB}")
+elif [ $USE_OPENMP -eq 1 ]; then
     CMAKE_ARGS+=("-DUSE_OPENMP=ON")
 else
     CMAKE_ARGS+=("-DUSE_OPENMP=OFF")
@@ -299,7 +311,11 @@ echo "Architecture:       ${ARCH}"
 echo "Python:             ${PYTHON}"
 echo "Output directory:   ${BUILD_ROOT}"
 echo "USE_DISTRIBUTED:    ${USE_DISTRIBUTED}"
-echo "USE_OPENMP:         ${USE_OPENMP}"
+if [ -f "${CUSTOM_OPENMP_LIB}" ]; then
+    echo "OpenMP:             custom static (${CUSTOM_OPENMP_LIB})"
+else
+    echo "OpenMP:             system (USE_OPENMP=${USE_OPENMP})"
+fi
 echo "BUILD_LITE:         ${BUILD_LITE_INTERPRETER}"
 echo -e "${GREEN}====================================${NC}"
 echo ""

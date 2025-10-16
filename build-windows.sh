@@ -278,7 +278,19 @@ CMAKE_ARGS+=("-DBUILD_TEST=OFF")
 CMAKE_ARGS+=("-DBUILD_BINARY=OFF")
 
 # Windows-specific features
-if [ $USE_OPENMP -eq 1 ]; then
+# Check for custom-built OpenMP
+CUSTOM_OPENMP_LIB="${INSTALL_PREFIX}/lib/libomp.a"
+CUSTOM_OPENMP_INCLUDE="${INSTALL_PREFIX}/include"
+if [ $USE_OPENMP -eq 1 ] && [ -f "${CUSTOM_OPENMP_LIB}" ]; then
+    echo -e "${GREEN}Using custom-built static OpenMP from ${CUSTOM_OPENMP_LIB}${NC}"
+    CMAKE_ARGS+=("-DUSE_OPENMP=ON")
+    # Provide hints to FindOpenMP.cmake
+    CMAKE_ARGS+=("-DOpenMP_C_FLAGS=-Xclang -fopenmp -I${CUSTOM_OPENMP_INCLUDE}")
+    CMAKE_ARGS+=("-DOpenMP_CXX_FLAGS=-Xclang -fopenmp -I${CUSTOM_OPENMP_INCLUDE}")
+    CMAKE_ARGS+=("-DOpenMP_C_LIB_NAMES=omp")
+    CMAKE_ARGS+=("-DOpenMP_CXX_LIB_NAMES=omp")
+    CMAKE_ARGS+=("-DOpenMP_omp_LIBRARY=${CUSTOM_OPENMP_LIB}")
+elif [ $USE_OPENMP -eq 1 ]; then
     CMAKE_ARGS+=("-DUSE_OPENMP=ON")
 else
     CMAKE_ARGS+=("-DUSE_OPENMP=OFF")
@@ -315,7 +327,11 @@ echo "Library type:       $([ ${BUILD_SHARED_LIBS} -eq 1 ] && echo 'shared' || e
 echo "Architecture:       ${ARCH}"
 echo "Python:             ${PYTHON}"
 echo "Output directory:   ${BUILD_ROOT}"
-echo "USE_OPENMP:         ${USE_OPENMP}"
+if [ -f "${CUSTOM_OPENMP_LIB}" ]; then
+    echo "OpenMP:             custom static (${CUSTOM_OPENMP_LIB})"
+else
+    echo "OpenMP:             system (USE_OPENMP=${USE_OPENMP})"
+fi
 echo "BUILD_LITE:         ${BUILD_LITE_INTERPRETER}"
 echo "MSVC Static RT:     $([ ${BUILD_SHARED_LIBS} -eq 0 ] && echo 'ON' || echo 'OFF')"
 echo -e "${GREEN}====================================${NC}"
