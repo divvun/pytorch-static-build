@@ -400,6 +400,11 @@ NCPU=$(sysctl -n hw.ncpu)
 echo -e "${YELLOW}Building with ${NCPU} parallel jobs...${NC}"
 "${CMAKE_PATH}" --build . --target install -- "-j${NCPU}"
 
+# Copy all build artifacts to sysroot
+echo -e "${YELLOW}Copying libraries and headers to sysroot...${NC}"
+cp -rf "${BUILD_ROOT}/lib/"* "${INSTALL_PREFIX}/lib/" 2>/dev/null || true
+cp -rf "${BUILD_ROOT}/include/"* "${INSTALL_PREFIX}/include/" 2>/dev/null || true
+
 echo ""
 echo -e "${GREEN}iOS build completed successfully!${NC}"
 echo ""

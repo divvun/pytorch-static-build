@@ -343,6 +343,11 @@ fi
 echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
 "${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
 
+# Copy all build artifacts to sysroot
+echo -e "${YELLOW}Copying libraries and headers to sysroot...${NC}"
+cp -rf "${BUILD_ROOT}/lib/"* "${INSTALL_PREFIX}/lib/" 2>/dev/null || true
+cp -rf "${BUILD_ROOT}/include/"* "${INSTALL_PREFIX}/include/" 2>/dev/null || true
+
 echo ""
 echo -e "${GREEN}macOS build completed successfully!${NC}"
 echo ""
