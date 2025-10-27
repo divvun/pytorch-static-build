@@ -143,15 +143,19 @@ fi
 
 # Check for required tools
 if ! command -v ninja &> /dev/null; then
-    echo -e "${RED}Error: ninja not found${NC}"
-    echo "Install it with: pacman -S mingw-w64-x86_64-ninja"
-    exit 1
+    echo -e "${YELLOW}ninja not found, installing with pacman...${NC}"
+    pacman -S --noconfirm ninja || {
+        echo -e "${RED}Error: Failed to install ninja${NC}"
+        exit 1
+    }
 fi
 
 if ! command -v cmake &> /dev/null; then
-    echo -e "${RED}Error: cmake not found${NC}"
-    echo "Install it with: pacman -S mingw-w64-x86_64-cmake"
-    exit 1
+    echo -e "${YELLOW}cmake not found, installing with pacman...${NC}"
+    pacman -S --noconfirm cmake || {
+        echo -e "${RED}Error: Failed to install cmake${NC}"
+        exit 1
+    }
 fi
 
 # Check for MSVC (cl.exe should be in PATH)
