@@ -144,16 +144,18 @@ fi
 # Check for required tools
 if ! command -v ninja &> /dev/null; then
     echo -e "${YELLOW}ninja not found, installing with pacman...${NC}"
-    pacman -S --noconfirm ninja || {
+    pacman -S --noconfirm mingw-w64-x86_64-ninja || {
         echo -e "${RED}Error: Failed to install ninja${NC}"
+        echo "Try manually: pacman -S mingw-w64-x86_64-ninja"
         exit 1
     }
 fi
 
 if ! command -v cmake &> /dev/null; then
     echo -e "${YELLOW}cmake not found, installing with pacman...${NC}"
-    pacman -S --noconfirm cmake || {
+    pacman -S --noconfirm mingw-w64-x86_64-cmake || {
         echo -e "${RED}Error: Failed to install cmake${NC}"
+        echo "Try manually: pacman -S mingw-w64-x86_64-cmake"
         exit 1
     }
 fi

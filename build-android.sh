@@ -145,15 +145,22 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Check for ANDROID_NDK
+# Check for ANDROID_NDK (support both ANDROID_NDK and ANDROID_NDK_HOME)
 if [ -z "$ANDROID_NDK" ]; then
-    echo -e "${RED}Error: ANDROID_NDK environment variable not set${NC}"
-    echo ""
-    echo "Please set ANDROID_NDK to your Android NDK directory:"
-    echo "  export ANDROID_NDK=/path/to/android-ndk"
-    echo ""
-    echo "Download NDK from: https://developer.android.com/ndk/downloads"
-    exit 1
+    if [ -n "$ANDROID_NDK_HOME" ]; then
+        export ANDROID_NDK="$ANDROID_NDK_HOME"
+        echo -e "${YELLOW}Using ANDROID_NDK_HOME as ANDROID_NDK: ${ANDROID_NDK}${NC}"
+    else
+        echo -e "${RED}Error: ANDROID_NDK environment variable not set${NC}"
+        echo ""
+        echo "Please set ANDROID_NDK to your Android NDK directory:"
+        echo "  export ANDROID_NDK=/path/to/android-ndk"
+        echo "  OR"
+        echo "  export ANDROID_NDK_HOME=/path/to/android-ndk"
+        echo ""
+        echo "Download NDK from: https://developer.android.com/ndk/downloads"
+        exit 1
+    fi
 fi
 
 if [ ! -d "$ANDROID_NDK" ]; then

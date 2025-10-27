@@ -120,9 +120,7 @@ fi
 
 # Build dependencies if requested
 if [ $WITH_DEPS -eq 1 ]; then
-    echo -e "${GREEN}========================================${NC}"
-    echo -e "${GREEN}Building dependencies for ${TARGET}${NC}"
-    echo -e "${GREEN}========================================${NC}"
+    echo "--- :package: Building dependencies for ${TARGET}"
     echo ""
 
     INSTALL_PREFIX="${SCRIPT_DIR}/target/${TARGET}"
@@ -149,37 +147,37 @@ if [ $WITH_DEPS -eq 1 ]; then
         aarch64-apple-darwin|x86_64-apple-darwin)
             # macOS: Check if cross-compiling
             if [ "$TARGET" != "$HOST_DARWIN_TARGET" ]; then
-                echo -e "${YELLOW}Building host protoc for ${HOST_DARWIN_TARGET} (required for cross-compilation)...${NC}"
+                echo "--- :hammer_and_wrench: Building host protoc for ${HOST_DARWIN_TARGET}"
                 "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_DARWIN_TARGET}" "${COMMON_ARGS[@]}"
             fi
             ;;
         aarch64-apple-ios|aarch64-apple-ios-sim|x86_64-apple-ios-sim|arm64_32-apple-watchos)
             # iOS/watchOS: Need macOS host protoc
-            echo -e "${YELLOW}Building host protoc for ${HOST_DARWIN_TARGET} (required for cross-compilation)...${NC}"
+            echo "--- :hammer_and_wrench: Building host protoc for ${HOST_DARWIN_TARGET}"
             "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_DARWIN_TARGET}" "${COMMON_ARGS[@]}"
             ;;
         x86_64-unknown-linux-gnu|aarch64-unknown-linux-gnu)
             # Linux: Check if cross-compiling
             if [ "$TARGET" != "$HOST_LINUX_TARGET" ]; then
-                echo -e "${YELLOW}Building host protoc for ${HOST_LINUX_TARGET} (required for cross-compilation)...${NC}"
+                echo "--- :hammer_and_wrench: Building host protoc for ${HOST_LINUX_TARGET}"
                 "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_LINUX_TARGET}" "${COMMON_ARGS[@]}"
             fi
             ;;
         *-linux-android)
             # Android: Need Linux host protoc
-            echo -e "${YELLOW}Building host protoc for ${HOST_LINUX_TARGET} (required for cross-compilation)...${NC}"
+            echo "--- :hammer_and_wrench: Building host protoc for ${HOST_LINUX_TARGET}"
             "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_LINUX_TARGET}" "${COMMON_ARGS[@]}"
             ;;
     esac
 
     # Build target protobuf - always build to ensure correct version
-    echo -e "${YELLOW}Building Protobuf for ${TARGET}...${NC}"
+    echo "--- :package: Building Protobuf for ${TARGET}"
     "${SCRIPT_DIR}/build-protobuf.sh" --target "${TARGET}" "${COMMON_ARGS[@]}"
 
     # 2. Build OpenMP (only for macOS, Linux, Windows)
     case "$TARGET" in
         *-apple-darwin|*-unknown-linux-gnu|*-pc-windows-msvc)
-            echo -e "${YELLOW}Building OpenMP for ${TARGET}...${NC}"
+            echo "--- :fire: Building OpenMP for ${TARGET}"
             "${SCRIPT_DIR}/build-libomp.sh" --target "${TARGET}" "${COMMON_ARGS[@]}"
             ;;
         *)
@@ -188,7 +186,7 @@ if [ $WITH_DEPS -eq 1 ]; then
     esac
 
     # 3. Build ICU4C (all platforms)
-    echo -e "${YELLOW}Building ICU4C for ${TARGET}...${NC}"
+    echo "--- :globe_with_meridians: Building ICU4C for ${TARGET}"
     "${SCRIPT_DIR}/build-icu4c.sh" --target "${TARGET}" "${COMMON_ARGS[@]}"
 
     echo ""
@@ -200,67 +198,67 @@ fi
 case "$TARGET" in
     # macOS targets
     aarch64-apple-darwin)
-        echo -e "${GREEN}Building for macOS (Apple Silicon)${NC}"
+        echo "--- :apple: Building PyTorch for macOS (Apple Silicon)"
         exec "${SCRIPT_DIR}/build-macos.sh" --target "${TARGET}" "${BUILD_ARGS[@]}"
         ;;
     x86_64-apple-darwin)
-        echo -e "${GREEN}Building for macOS (Intel)${NC}"
+        echo "--- :apple: Building PyTorch for macOS (Intel)"
         exec "${SCRIPT_DIR}/build-macos.sh" --target "${TARGET}" "${BUILD_ARGS[@]}"
         ;;
 
     # iOS targets
     aarch64-apple-ios)
-        echo -e "${GREEN}Building for iOS device${NC}"
+        echo "--- :iphone: Building PyTorch for iOS device"
         exec "${SCRIPT_DIR}/build-ios.sh" --device "${BUILD_ARGS[@]}"
         ;;
     aarch64-apple-ios-sim)
-        echo -e "${GREEN}Building for iOS simulator (Apple Silicon)${NC}"
+        echo "--- :iphone: Building PyTorch for iOS simulator (Apple Silicon)"
         exec "${SCRIPT_DIR}/build-ios.sh" --simulator-arm64 "${BUILD_ARGS[@]}"
         ;;
     x86_64-apple-ios-sim)
-        echo -e "${GREEN}Building for iOS simulator (Intel)${NC}"
+        echo "--- :iphone: Building PyTorch for iOS simulator (Intel)"
         exec "${SCRIPT_DIR}/build-ios.sh" --simulator "${BUILD_ARGS[@]}"
         ;;
     arm64_32-apple-watchos)
-        echo -e "${GREEN}Building for watchOS${NC}"
+        echo "--- :watch: Building PyTorch for watchOS"
         exec "${SCRIPT_DIR}/build-ios.sh" --watchos "${BUILD_ARGS[@]}"
         ;;
 
     # Android targets
     aarch64-linux-android)
-        echo -e "${GREEN}Building for Android arm64-v8a${NC}"
+        echo "--- :android: Building PyTorch for Android arm64-v8a"
         exec "${SCRIPT_DIR}/build-android.sh" --abi arm64-v8a "${BUILD_ARGS[@]}"
         ;;
     armv7-linux-androideabi)
-        echo -e "${GREEN}Building for Android armeabi-v7a${NC}"
+        echo "--- :android: Building PyTorch for Android armeabi-v7a"
         exec "${SCRIPT_DIR}/build-android.sh" --abi armeabi-v7a "${BUILD_ARGS[@]}"
         ;;
     x86_64-linux-android)
-        echo -e "${GREEN}Building for Android x86_64${NC}"
+        echo "--- :android: Building PyTorch for Android x86_64"
         exec "${SCRIPT_DIR}/build-android.sh" --abi x86_64 "${BUILD_ARGS[@]}"
         ;;
     i686-linux-android)
-        echo -e "${GREEN}Building for Android x86${NC}"
+        echo "--- :android: Building PyTorch for Android x86"
         exec "${SCRIPT_DIR}/build-android.sh" --abi x86 "${BUILD_ARGS[@]}"
         ;;
 
     # Linux targets
     x86_64-unknown-linux-gnu)
-        echo -e "${GREEN}Building for Linux x86_64${NC}"
+        echo "--- :penguin: Building PyTorch for Linux x86_64"
         exec "${SCRIPT_DIR}/build-linux.sh" --target "${TARGET}" "${BUILD_ARGS[@]}"
         ;;
     aarch64-unknown-linux-gnu)
-        echo -e "${GREEN}Building for Linux ARM64${NC}"
+        echo "--- :penguin: Building PyTorch for Linux ARM64"
         exec "${SCRIPT_DIR}/build-linux.sh" --target "${TARGET}" "${BUILD_ARGS[@]}"
         ;;
 
     # Windows targets
     x86_64-pc-windows-msvc)
-        echo -e "${GREEN}Building for Windows x64 (MSVC)${NC}"
+        echo "--- :windows: Building PyTorch for Windows x64 (MSVC)"
         exec "${SCRIPT_DIR}/build-windows.sh" --arch x64 "${BUILD_ARGS[@]}"
         ;;
     i686-pc-windows-msvc)
-        echo -e "${GREEN}Building for Windows x86 (MSVC)${NC}"
+        echo "--- :windows: Building PyTorch for Windows x86 (MSVC)"
         exec "${SCRIPT_DIR}/build-windows.sh" --arch x86 "${BUILD_ARGS[@]}"
         ;;
 

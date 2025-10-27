@@ -125,9 +125,18 @@ if ! command -v git &> /dev/null; then
 fi
 
 if ! command -v make &> /dev/null; then
-    echo -e "${RED}Error: make not found${NC}"
-    echo "Install it with your package manager"
-    exit 1
+    if [ "$PLATFORM" = "windows" ]; then
+        echo -e "${YELLOW}make not found, installing with pacman...${NC}"
+        pacman -S --noconfirm mingw-w64-x86_64-make || {
+            echo -e "${RED}Error: Failed to install make${NC}"
+            echo "Try manually: pacman -S mingw-w64-x86_64-make"
+            exit 1
+        }
+    else
+        echo -e "${RED}Error: make not found${NC}"
+        echo "Install it with your package manager"
+        exit 1
+    fi
 fi
 
 # Set up paths

@@ -120,6 +120,7 @@ if ! command -v uv &> /dev/null; then
     exit 1
 fi
 
+echo "--- :gear: Setting up build environment"
 echo -e "${GREEN}Building PyTorch C++ libraries for macOS${NC}"
 
 # Change to PyTorch directory if not already there
@@ -170,16 +171,16 @@ fi
 # Tell CMake where to find Ninja
 export CMAKE_MAKE_PROGRAM="${NINJA_PATH}"
 
-# Install minimal Python dependencies
-echo -e "${YELLOW}Installing Python dependencies with uv...${NC}"
+echo "--- :python: Installing Python dependencies"
 uv pip install pyyaml setuptools typing-extensions 2>/dev/null || {
     echo -e "${YELLOW}Warning: Some dependencies failed to install${NC}"
 }
 
-# Fetch optional dependencies
+echo "--- :package: Fetching optional dependencies"
 if [ ! -f "third_party/eigen/CMakeLists.txt" ]; then
-    echo -e "${YELLOW}Fetching optional Eigen dependency...${NC}"
     "$PYTHON" tools/optional_submodules.py checkout_eigen
+else
+    echo "Eigen already present"
 fi
 
 # Determine target triple
@@ -400,8 +401,7 @@ echo "BUILD_LITE:         ${BUILD_LITE_INTERPRETER}"
 echo -e "${GREEN}====================================${NC}"
 echo ""
 
-# Run CMake configuration
-echo -e "${YELLOW}Running CMake configuration...${NC}"
+echo "--- :cmake: Running CMake configuration"
 cd "${BUILD_ROOT}"
 "${CMAKE_PATH}" "${CAFFE2_ROOT}" "${CMAKE_ARGS[@]}"
 
@@ -410,12 +410,10 @@ if [ -z "$MAX_JOBS" ]; then
     MAX_JOBS=$(sysctl -n hw.ncpu)
 fi
 
-# Build
-echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
+echo "--- :hammer: Building PyTorch (${MAX_JOBS} parallel jobs)"
 "${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
 
-# Copy all build artifacts to sysroot
-echo -e "${YELLOW}Copying libraries and headers to sysroot...${NC}"
+echo "--- :package: Installing libraries and headers"
 cp -rf "${BUILD_ROOT}/lib/"* "${INSTALL_PREFIX}/lib/" 2>/dev/null || true
 cp -rf "${BUILD_ROOT}/include/"* "${INSTALL_PREFIX}/include/" 2>/dev/null || true
 
