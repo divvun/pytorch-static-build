@@ -118,6 +118,12 @@ if [ -z "$TARGET" ]; then
     exit 1
 fi
 
+case "$TARGET" in
+    *-windows-*)
+        export PATH=$PATH:/c/msys2/usr/bin
+        ;;
+esac
+
 # Clean target directory if requested
 CLEAN_BUILD=1
 for arg in "${COMMON_ARGS[@]}"; do
@@ -184,9 +190,6 @@ if [ $WITH_DEPS -eq 1 ]; then
             # Android: Need Linux host protoc
             echo "--- :hammer_and_wrench: Building host protoc for ${HOST_LINUX_TARGET}"
             "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_LINUX_TARGET}" "${COMMON_ARGS[@]}"
-            ;;
-        *-windows-*)
-            export PATH=$PATH:/c/msys2/usr/bin
             ;;
     esac
 
