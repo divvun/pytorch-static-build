@@ -24,6 +24,8 @@ NC='\033[0m' # No Color
 
 # Parse arguments
 TAG=""
+USE_CACHE=0
+CREATE_CACHE=0
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -31,17 +33,28 @@ while [[ $# -gt 0 ]]; do
             TAG="$2"
             shift 2
             ;;
+        --cache)
+            CREATE_CACHE=1
+            shift
+            ;;
+        --from-cache)
+            USE_CACHE=1
+            shift
+            ;;
         --help|-h)
-            echo "Usage: $0 --tag <version>"
+            echo "Usage: $0 --tag <version> [options]"
             echo ""
             echo "Clone PyTorch repository at a specific tag with minimal history."
             echo ""
             echo "Arguments:"
             echo "  --tag <version>    Git tag to clone (e.g., v2.1.0, v2.2.0)"
+            echo "  --cache            After cloning, create pytorch-<TAG>.src.tar.gz archive"
+            echo "  --from-cache       Extract from pytorch-<TAG>.src.tar.gz instead of cloning"
             echo ""
             echo "Examples:"
             echo "  $0 --tag v2.1.0"
-            echo "  $0 --tag v2.2.0"
+            echo "  $0 --tag v2.1.0 --cache              # Clone and create cache"
+            echo "  $0 --tag v2.1.0 --from-cache         # Restore from cache"
             exit 0
             ;;
         *)
@@ -61,6 +74,29 @@ fi
 
 PYTORCH_DIR="pytorch"
 PYTORCH_REPO="https://github.com/pytorch/pytorch.git"
+ARCHIVE_NAME="pytorch-${TAG}.src.tar.gz"
+
+# Handle cache restoration
+if [ $USE_CACHE -eq 1 ]; then
+    if [ ! -f "$ARCHIVE_NAME" ]; then
+        echo -e "${RED}Error: Cache archive not found: $ARCHIVE_NAME${NC}"
+        exit 1
+    fi
+
+    if [ -d "$PYTORCH_DIR" ]; then
+        echo -e "${RED}Error: pytorch directory already exists${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}Extracting from cache: $ARCHIVE_NAME${NC}"
+    tar -xzf "$ARCHIVE_NAME"
+    echo ""
+    echo -e "${GREEN}PyTorch restored from cache at ${TAG}${NC}"
+    echo -e "${GREEN}PyTorch is ready at: $(pwd)/$PYTORCH_DIR${NC}"
+    echo -e "${GREEN}Version: ${TAG}${NC}"
+    echo ""
+    exit 0
+fi
 
 # Clone or update PyTorch
 if [ ! -d "$PYTORCH_DIR" ]; then
@@ -71,6 +107,9 @@ if [ ! -d "$PYTORCH_DIR" ]; then
 
     echo -e "${YELLOW}Initializing submodules...${NC}"
     git submodule update --init --recursive --depth 1
+
+    echo -e "${YELLOW}Fetching optional submodules (eigen)...${NC}"
+    python3 tools/optional_submodules.py checkout_eigen
 
     echo -e "${GREEN}PyTorch cloned successfully at ${TAG}${NC}"
 else
@@ -90,6 +129,9 @@ else
     echo -e "${YELLOW}Updating submodules...${NC}"
     git submodule update --init --recursive --depth 1
 
+    echo -e "${YELLOW}Fetching optional submodules (eigen)...${NC}"
+    python3 tools/optional_submodules.py checkout_eigen
+
     echo -e "${GREEN}PyTorch updated to ${TAG}${NC}"
 fi
 
@@ -97,3 +139,12 @@ echo ""
 echo -e "${GREEN}PyTorch is ready at: $(pwd)${NC}"
 echo -e "${GREEN}Version: ${TAG}${NC}"
 echo ""
+
+# Create cache archive if requested
+if [ $CREATE_CACHE -eq 1 ]; then
+    cd ..
+    echo -e "${YELLOW}Creating cache archive: $ARCHIVE_NAME${NC}"
+    tar --exclude='.git' -czf "$ARCHIVE_NAME" "$PYTORCH_DIR/"
+    echo -e "${GREEN}Cache archive created: $ARCHIVE_NAME${NC}"
+    echo ""
+fi
