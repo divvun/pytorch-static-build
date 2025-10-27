@@ -3,18 +3,17 @@
 #
 # Usage:
 #   .\build-protobuf.ps1 -Target x86_64-pc-windows-msvc
-#   .\build-protobuf.ps1 -Target x86_64-pc-windows-msvc -Debug
+#   .\build-protobuf.ps1 -Target x86_64-pc-windows-msvc -BuildType Debug
 #
 
 param(
     [Parameter(Mandatory=$true)]
     [string]$Target,
 
+    [ValidateSet("Release","Debug","RelWithDebInfo","MinSizeRel")]
+    [string]$BuildType = "Release",
+
     [switch]$NoClean,
-    [switch]$Debug,
-    [switch]$Release,
-    [switch]$RelWithDebInfo,
-    [switch]$MinSize,
     [switch]$Help
 )
 
@@ -24,15 +23,8 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = $ScriptDir
 
-# Default options
-$BuildType = "Release"
-$CleanBuild = $true
-
-# Parse build type from switches
-if ($Debug) { $BuildType = "Debug" }
-if ($RelWithDebInfo) { $BuildType = "RelWithDebInfo" }
-if ($MinSize) { $BuildType = "MinSizeRel" }
-if ($NoClean) { $CleanBuild = $false }
+# Parse options
+$CleanBuild = -not $NoClean
 
 # Show help
 if ($Help) {
@@ -42,11 +34,8 @@ if ($Help) {
     Write-Host "  -Target <triple>     Target triple (e.g., x86_64-pc-windows-msvc)"
     Write-Host ""
     Write-Host "Build Options:"
+    Write-Host "  -BuildType <type>    Build type: Release (default), Debug, RelWithDebInfo, MinSizeRel"
     Write-Host "  -NoClean             Skip cleaning build directories"
-    Write-Host "  -Debug               Build with debug symbols"
-    Write-Host "  -Release             Build optimized release (default)"
-    Write-Host "  -RelWithDebInfo      Build optimized with debug symbols"
-    Write-Host "  -MinSize             Build for minimum size"
     Write-Host "  -Help                Show this help message"
     exit 0
 }

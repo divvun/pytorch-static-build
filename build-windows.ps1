@@ -3,7 +3,7 @@
 #
 # Usage:
 #   .\build-windows.ps1 -Target x86_64-pc-windows-msvc
-#   .\build-windows.ps1 -Target i686-pc-windows-msvc -Debug
+#   .\build-windows.ps1 -Target i686-pc-windows-msvc -BuildType Debug
 #   .\build-windows.ps1 -Target x86_64-pc-windows-msvc -Shared
 #
 
@@ -11,11 +11,10 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$Target,
 
+    [ValidateSet("Release","Debug","RelWithDebInfo","MinSizeRel")]
+    [string]$BuildType = "Release",
+
     [switch]$NoClean,
-    [switch]$Debug,
-    [switch]$Release,
-    [switch]$RelWithDebInfo,
-    [switch]$MinSize,
     [switch]$Static,
     [switch]$Shared,
     [switch]$Lite,
@@ -30,22 +29,11 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = $ScriptDir
 $PyTorchRoot = Join-Path $RepoRoot "pytorch"
 
-# Default options
-$BuildType = "Release"
-$CleanBuild = $true
-$BuildSharedLibs = $false
-$BuildLiteInterpreter = $false
+# Parse options
+$CleanBuild = -not $NoClean
+$BuildSharedLibs = $Shared
+$BuildLiteInterpreter = $Lite
 $UseOpenMP = $true
-
-# Parse build type from switches
-if ($Debug) { $BuildType = "Debug" }
-if ($RelWithDebInfo) { $BuildType = "RelWithDebInfo" }
-if ($MinSize) { $BuildType = "MinSizeRel" }
-if ($NoClean) { $CleanBuild = $false }
-if ($Shared) { $BuildSharedLibs = $true }
-if ($Static) { $BuildSharedLibs = $false }
-if ($Lite) { $BuildLiteInterpreter = $true }
-if ($Full) { $BuildLiteInterpreter = $false }
 
 # Show help
 if ($Help) {
@@ -55,11 +43,8 @@ if ($Help) {
     Write-Host "  -Target <triple>     Target triple (x86_64-pc-windows-msvc or i686-pc-windows-msvc)"
     Write-Host ""
     Write-Host "Build Options:"
+    Write-Host "  -BuildType <type>    Build type: Release (default), Debug, RelWithDebInfo, MinSizeRel"
     Write-Host "  -NoClean             Skip cleaning build directories"
-    Write-Host "  -Debug               Build with debug symbols"
-    Write-Host "  -Release             Build optimized release (default)"
-    Write-Host "  -RelWithDebInfo      Build optimized with debug symbols"
-    Write-Host "  -MinSize             Build for minimum size"
     Write-Host "  -Static              Build static libraries (default)"
     Write-Host "  -Shared              Build shared libraries"
     Write-Host "  -Lite                Build Lite Interpreter"

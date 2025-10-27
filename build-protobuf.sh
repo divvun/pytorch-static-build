@@ -127,15 +127,7 @@ if [ "$PLATFORM" = "windows" ]; then
     echo -e "${YELLOW}Delegating to PowerShell script for Windows build...${NC}"
 
     # Build PowerShell arguments from bash arguments
-    PS_ARGS="-Target $TARGET_TRIPLE"
-
-    if [ "$BUILD_TYPE" = "Debug" ]; then
-        PS_ARGS="$PS_ARGS -Debug"
-    elif [ "$BUILD_TYPE" = "RelWithDebInfo" ]; then
-        PS_ARGS="$PS_ARGS -RelWithDebInfo"
-    elif [ "$BUILD_TYPE" = "MinSizeRel" ]; then
-        PS_ARGS="$PS_ARGS -MinSize"
-    fi
+    PS_ARGS="-Target $TARGET_TRIPLE -BuildType $BUILD_TYPE"
 
     if [ $CLEAN_BUILD -eq 0 ]; then
         PS_ARGS="$PS_ARGS -NoClean"
