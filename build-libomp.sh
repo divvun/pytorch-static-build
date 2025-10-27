@@ -102,6 +102,9 @@ case "$TARGET_TRIPLE" in
     *-apple-darwin)
         PLATFORM="darwin"
         ;;
+    *-apple-ios*|*-apple-watchos*)
+        PLATFORM="darwin"
+        ;;
     *-linux-*)
         PLATFORM="linux"
         ;;

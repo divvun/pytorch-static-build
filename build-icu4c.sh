@@ -103,6 +103,10 @@ case "$TARGET_TRIPLE" in
         PLATFORM="darwin"
         ICU_PLATFORM="MacOSX"
         ;;
+    *-apple-ios*|*-apple-watchos*)
+        PLATFORM="darwin"
+        ICU_PLATFORM="MacOSX"
+        ;;
     *-linux-*)
         PLATFORM="linux"
         ICU_PLATFORM="Linux"
