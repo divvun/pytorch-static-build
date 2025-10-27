@@ -218,19 +218,6 @@ PROTOBUF_SOURCE_DIR="${REPO_ROOT}/protobuf"
 BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/protobuf"
 INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}"
 
-# Convert paths to Windows format if on Windows platform
-if [ "$PLATFORM" = "windows" ]; then
-    PROTOBUF_SOURCE_DIR_WIN=$(cygpath -w "${PROTOBUF_SOURCE_DIR}")
-    BUILD_ROOT_WIN=$(cygpath -w "${BUILD_ROOT}")
-    INSTALL_PREFIX_WIN=$(cygpath -w "${INSTALL_PREFIX}")
-    NINJA_PATH_WIN=$(cygpath -w "${NINJA_PATH}")
-else
-    PROTOBUF_SOURCE_DIR_WIN="${PROTOBUF_SOURCE_DIR}"
-    BUILD_ROOT_WIN="${BUILD_ROOT}"
-    INSTALL_PREFIX_WIN="${INSTALL_PREFIX}"
-    NINJA_PATH_WIN="${NINJA_PATH}"
-fi
-
 # Clone protobuf if not already present
 if [ ! -d "${PROTOBUF_SOURCE_DIR}" ]; then
     echo -e "${YELLOW}Cloning Protocol Buffers from GitHub...${NC}"
@@ -286,16 +273,25 @@ else
     NINJA_PATH=$(which ninja)
 fi
 
+# Convert all paths to Windows format if on Windows
+if [ "$PLATFORM" = "windows" ]; then
+    PROTOBUF_SOURCE_DIR=$(cygpath -w "${PROTOBUF_SOURCE_DIR}")
+    BUILD_ROOT=$(cygpath -w "${BUILD_ROOT}")
+    INSTALL_PREFIX=$(cygpath -w "${INSTALL_PREFIX}")
+    NINJA_PATH=$(cygpath -w "${NINJA_PATH}")
+    CMAKE_PATH=$(cygpath -w "${CMAKE_PATH}")
+fi
+
 # Prepare CMake arguments
 CMAKE_ARGS=()
 
 # Generator
 CMAKE_ARGS+=("-GNinja")
-CMAKE_ARGS+=("-DCMAKE_MAKE_PROGRAM=${NINJA_PATH_WIN}")
+CMAKE_ARGS+=("-DCMAKE_MAKE_PROGRAM=${NINJA_PATH}")
 
 # Build configuration
 CMAKE_ARGS+=("-DCMAKE_BUILD_TYPE=${BUILD_TYPE}")
-CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX_WIN}")
+CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}")
 
 # Compilers
 CMAKE_ARGS+=("-DCMAKE_C_COMPILER=${CC}")
@@ -358,7 +354,7 @@ if [ "$PLATFORM" = "windows" ]; then
     export MSYS_NO_PATHCONV=1
     export MSYS2_ARG_CONV_EXCL="*"
 fi
-"${CMAKE_PATH}" "${PROTOBUF_SOURCE_DIR_WIN}" "${CMAKE_ARGS[@]}"
+"${CMAKE_PATH}" "${PROTOBUF_SOURCE_DIR}" "${CMAKE_ARGS[@]}"
 if [ "$PLATFORM" = "windows" ]; then
     unset MSYS_NO_PATHCONV
     unset MSYS2_ARG_CONV_EXCL

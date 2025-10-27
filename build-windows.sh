@@ -282,37 +282,26 @@ fi
 
 mkdir -p "${BUILD_ROOT}"
 
-# Convert paths to Windows format for CMake
-CAFFE2_ROOT_WIN=$(cygpath -w "${CAFFE2_ROOT}")
-INSTALL_PREFIX_WIN=$(cygpath -w "${INSTALL_PREFIX}")
-BUILD_ROOT_WIN=$(cygpath -w "${BUILD_ROOT}")
+# Python configuration (needed for CMake generation)
+# Note: Python paths are already in Windows format from python itself
+PYTHON_PREFIX_PATH=$($PYTHON -c 'import sysconfig; print(sysconfig.get_path("purelib"))' | sed 's|\\|/|g')
+PYTHON_EXECUTABLE=$($PYTHON -c 'import sys; print(sys.executable)' | sed 's|\\|/|g')
 
 # Prepare CMake arguments
 CMAKE_ARGS=()
 
-# Python configuration (needed for CMake generation)
-# Note: On Windows, we need to use Windows-style paths for Python
-PYTHON_PREFIX_PATH=$($PYTHON -c 'import sysconfig; print(sysconfig.get_path("purelib"))' | sed 's|\\|/|g')
-PYTHON_EXECUTABLE=$($PYTHON -c 'import sys; print(sys.executable)' | sed 's|\\|/|g')
-
-# Convert more paths to Windows format
-NINJA_PATH_WIN=$(cygpath -w "${NINJA_PATH}")
-# Python paths are already in Windows format from python itself
-PYTHON_PREFIX_PATH_WIN="${PYTHON_PREFIX_PATH}"
-PYTHON_EXECUTABLE_WIN="${PYTHON_EXECUTABLE}"
-
-CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${INSTALL_PREFIX_WIN};${PYTHON_PREFIX_PATH_WIN}")
-CMAKE_ARGS+=("-DPython_EXECUTABLE=${PYTHON_EXECUTABLE_WIN}")
+CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${PYTHON_PREFIX_PATH}")
+CMAKE_ARGS+=("-DPython_EXECUTABLE=${PYTHON_EXECUTABLE}")
 
 # Use Ninja
 CMAKE_ARGS+=("-GNinja")
-CMAKE_ARGS+=("-DCMAKE_MAKE_PROGRAM=${NINJA_PATH_WIN}")
+CMAKE_ARGS+=("-DCMAKE_MAKE_PROGRAM=${NINJA_PATH}")
 
 # Suppress CMake deprecation warnings
 CMAKE_ARGS+=("-DCMAKE_WARN_DEPRECATED=OFF")
 
 # Build configuration
-CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX_WIN}")
+CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}")
 CMAKE_ARGS+=("-DCMAKE_BUILD_TYPE=${BUILD_TYPE}")
 
 # Set compilers explicitly to MSVC
@@ -358,17 +347,13 @@ CUSTOM_OPENMP_LIB="${INSTALL_PREFIX}/lib/libomp.a"
 CUSTOM_OPENMP_INCLUDE="${INSTALL_PREFIX}/include"
 if [ $USE_OPENMP -eq 1 ] && [ -f "${CUSTOM_OPENMP_LIB}" ]; then
     echo -e "${GREEN}Using custom-built static OpenMP from ${CUSTOM_OPENMP_LIB}${NC}"
-    # Convert OpenMP paths to Windows format
-    CUSTOM_OPENMP_LIB_WIN=$(cygpath -w "${CUSTOM_OPENMP_LIB}")
-    CUSTOM_OPENMP_INCLUDE_WIN=$(cygpath -w "${CUSTOM_OPENMP_INCLUDE}")
-
     CMAKE_ARGS+=("-DUSE_OPENMP=ON")
     # Provide hints to FindOpenMP.cmake
-    CMAKE_ARGS+=("-DOpenMP_C_FLAGS=-Xclang -fopenmp -I${CUSTOM_OPENMP_INCLUDE_WIN}")
-    CMAKE_ARGS+=("-DOpenMP_CXX_FLAGS=-Xclang -fopenmp -I${CUSTOM_OPENMP_INCLUDE_WIN}")
+    CMAKE_ARGS+=("-DOpenMP_C_FLAGS=-Xclang -fopenmp -I${CUSTOM_OPENMP_INCLUDE}")
+    CMAKE_ARGS+=("-DOpenMP_CXX_FLAGS=-Xclang -fopenmp -I${CUSTOM_OPENMP_INCLUDE}")
     CMAKE_ARGS+=("-DOpenMP_C_LIB_NAMES=omp")
     CMAKE_ARGS+=("-DOpenMP_CXX_LIB_NAMES=omp")
-    CMAKE_ARGS+=("-DOpenMP_omp_LIBRARY=${CUSTOM_OPENMP_LIB_WIN}")
+    CMAKE_ARGS+=("-DOpenMP_omp_LIBRARY=${CUSTOM_OPENMP_LIB}")
 elif [ $USE_OPENMP -eq 1 ]; then
     CMAKE_ARGS+=("-DUSE_OPENMP=ON")
 else
@@ -395,15 +380,11 @@ CUSTOM_PROTOBUF_LIB="${INSTALL_PREFIX}/lib/libprotobuf.a"
 CUSTOM_PROTOBUF_CMAKE_DIR="${INSTALL_PREFIX}/lib/cmake/protobuf"
 if [ -f "${CUSTOM_PROTOC}" ] && [ -f "${CUSTOM_PROTOBUF_LIB}" ]; then
     echo -e "${GREEN}Using custom-built static Protobuf from ${CUSTOM_PROTOBUF_LIB}${NC}"
-    # Convert protobuf paths to Windows format
-    CUSTOM_PROTOC_WIN=$(cygpath -w "${CUSTOM_PROTOC}")
-    CUSTOM_PROTOBUF_CMAKE_DIR_WIN=$(cygpath -w "${CUSTOM_PROTOBUF_CMAKE_DIR}")
-
     CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=OFF")
-    CMAKE_ARGS+=("-DCAFFE2_CUSTOM_PROTOC_EXECUTABLE=${CUSTOM_PROTOC_WIN}")
-    CMAKE_ARGS+=("-DProtobuf_PROTOC_EXECUTABLE=${CUSTOM_PROTOC_WIN}")
+    CMAKE_ARGS+=("-DCAFFE2_CUSTOM_PROTOC_EXECUTABLE=${CUSTOM_PROTOC}")
+    CMAKE_ARGS+=("-DProtobuf_PROTOC_EXECUTABLE=${CUSTOM_PROTOC}")
     # Point find_package(Protobuf CONFIG) to our custom protobuf
-    CMAKE_ARGS+=("-DProtobuf_DIR=${CUSTOM_PROTOBUF_CMAKE_DIR_WIN}")
+    CMAKE_ARGS+=("-DProtobuf_DIR=${CUSTOM_PROTOBUF_CMAKE_DIR}")
 else
     echo -e "${RED}Error: Custom protobuf not found!${NC}"
     echo "Build protobuf first with: ./build-protobuf.sh --target ${TARGET_TRIPLE}"
@@ -442,12 +423,27 @@ echo "MSVC Static RT:     $([ ${BUILD_SHARED_LIBS} -eq 0 ] && echo 'ON' || echo 
 echo -e "${GREEN}====================================${NC}"
 echo ""
 
+# Convert all paths to Windows format for CMake
+CAFFE2_ROOT=$(cygpath -w "${CAFFE2_ROOT}")
+INSTALL_PREFIX=$(cygpath -w "${INSTALL_PREFIX}")
+BUILD_ROOT=$(cygpath -w "${BUILD_ROOT}")
+NINJA_PATH=$(cygpath -w "${NINJA_PATH}")
+CMAKE_PATH=$(cygpath -w "${CMAKE_PATH}")
+if [ -n "${CUSTOM_OPENMP_LIB}" ]; then
+    CUSTOM_OPENMP_LIB=$(cygpath -w "${CUSTOM_OPENMP_LIB}")
+    CUSTOM_OPENMP_INCLUDE=$(cygpath -w "${CUSTOM_OPENMP_INCLUDE}")
+fi
+if [ -n "${CUSTOM_PROTOC}" ]; then
+    CUSTOM_PROTOC=$(cygpath -w "${CUSTOM_PROTOC}")
+    CUSTOM_PROTOBUF_CMAKE_DIR=$(cygpath -w "${CUSTOM_PROTOBUF_CMAKE_DIR}")
+fi
+
 # Run CMake configuration
 echo -e "${YELLOW}Running CMake configuration...${NC}"
 cd "${BUILD_ROOT}"
 export MSYS_NO_PATHCONV=1
 export MSYS2_ARG_CONV_EXCL="*"
-"${CMAKE_PATH}" "${CAFFE2_ROOT_WIN}" "${CMAKE_ARGS[@]}"
+"${CMAKE_PATH}" "${CAFFE2_ROOT}" "${CMAKE_ARGS[@]}"
 unset MSYS_NO_PATHCONV
 unset MSYS2_ARG_CONV_EXCL
 
