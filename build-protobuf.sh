@@ -218,6 +218,19 @@ PROTOBUF_SOURCE_DIR="${REPO_ROOT}/protobuf"
 BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/protobuf"
 INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}"
 
+# Convert paths to Windows format if on Windows platform
+if [ "$PLATFORM" = "windows" ]; then
+    PROTOBUF_SOURCE_DIR_WIN=$(cygpath -w "${PROTOBUF_SOURCE_DIR}")
+    BUILD_ROOT_WIN=$(cygpath -w "${BUILD_ROOT}")
+    INSTALL_PREFIX_WIN=$(cygpath -w "${INSTALL_PREFIX}")
+    NINJA_PATH_WIN=$(cygpath -w "${NINJA_PATH}")
+else
+    PROTOBUF_SOURCE_DIR_WIN="${PROTOBUF_SOURCE_DIR}"
+    BUILD_ROOT_WIN="${BUILD_ROOT}"
+    INSTALL_PREFIX_WIN="${INSTALL_PREFIX}"
+    NINJA_PATH_WIN="${NINJA_PATH}"
+fi
+
 # Clone protobuf if not already present
 if [ ! -d "${PROTOBUF_SOURCE_DIR}" ]; then
     echo -e "${YELLOW}Cloning Protocol Buffers from GitHub...${NC}"
@@ -278,11 +291,11 @@ CMAKE_ARGS=()
 
 # Generator
 CMAKE_ARGS+=("-GNinja")
-CMAKE_ARGS+=("-DCMAKE_MAKE_PROGRAM=${NINJA_PATH}")
+CMAKE_ARGS+=("-DCMAKE_MAKE_PROGRAM=${NINJA_PATH_WIN}")
 
 # Build configuration
 CMAKE_ARGS+=("-DCMAKE_BUILD_TYPE=${BUILD_TYPE}")
-CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}")
+CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX_WIN}")
 
 # Compilers
 CMAKE_ARGS+=("-DCMAKE_C_COMPILER=${CC}")
@@ -341,11 +354,15 @@ echo ""
 # Run CMake configuration
 echo -e "${YELLOW}Running CMake configuration...${NC}"
 cd "${BUILD_ROOT}"
-export MSYS_NO_PATHCONV=1
-export MSYS2_ARG_CONV_EXCL="*"
-"${CMAKE_PATH}" "${PROTOBUF_SOURCE_DIR}" "${CMAKE_ARGS[@]}"
-unset MSYS_NO_PATHCONV
-unset MSYS2_ARG_CONV_EXCL
+if [ "$PLATFORM" = "windows" ]; then
+    export MSYS_NO_PATHCONV=1
+    export MSYS2_ARG_CONV_EXCL="*"
+fi
+"${CMAKE_PATH}" "${PROTOBUF_SOURCE_DIR_WIN}" "${CMAKE_ARGS[@]}"
+if [ "$PLATFORM" = "windows" ]; then
+    unset MSYS_NO_PATHCONV
+    unset MSYS2_ARG_CONV_EXCL
+fi
 
 # Determine number of parallel jobs
 if [ -z "$MAX_JOBS" ]; then
@@ -358,11 +375,15 @@ fi
 
 # Build
 echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
-export MSYS_NO_PATHCONV=1
-export MSYS2_ARG_CONV_EXCL="*"
+if [ "$PLATFORM" = "windows" ]; then
+    export MSYS_NO_PATHCONV=1
+    export MSYS2_ARG_CONV_EXCL="*"
+fi
 "${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
-unset MSYS_NO_PATHCONV
-unset MSYS2_ARG_CONV_EXCL
+if [ "$PLATFORM" = "windows" ]; then
+    unset MSYS_NO_PATHCONV
+    unset MSYS2_ARG_CONV_EXCL
+fi
 
 # Copy Abseil libraries to sysroot (protobuf depends on Abseil)
 echo -e "${YELLOW}Copying Abseil libraries to sysroot...${NC}"
