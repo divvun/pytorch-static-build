@@ -16,7 +16,10 @@
 
 set -e
 
-export PATH=$PATH:/c/msys2/usr/bin
+# Add MSYS2 to PATH if present
+if [ -d "/c/msys2/usr/bin" ]; then
+    export PATH=$PATH:/c/msys2/usr/bin
+fi
 
 # Auto-detect and add MSVC to PATH if not already present
 if ! command -v cl.exe &> /dev/null; then
