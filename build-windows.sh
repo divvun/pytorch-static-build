@@ -16,10 +16,6 @@
 
 set -e
 
-# Set MSYS path conversion env vars early for entire script
-export MSYS_NO_PATHCONV=1
-export MSYS2_ARG_CONV_EXCL="*"
-
 # Add MSYS2 to PATH if present
 if [ -d "/c/msys2/usr/bin" ]; then
     export PATH=/c/msys2/usr/bin:$PATH
@@ -427,10 +423,24 @@ echo "MSVC Static RT:     $([ ${BUILD_SHARED_LIBS} -eq 0 ] && echo 'ON' || echo 
 echo -e "${GREEN}====================================${NC}"
 echo ""
 
+# Convert all paths to Windows format for PowerShell/CMake
+CAFFE2_ROOT=$(cygpath -w "${CAFFE2_ROOT}")
+INSTALL_PREFIX=$(cygpath -w "${INSTALL_PREFIX}")
+BUILD_ROOT=$(cygpath -w "${BUILD_ROOT}")
+NINJA_PATH=$(cygpath -w "${NINJA_PATH}")
+CMAKE_PATH=$(cygpath -w "${CMAKE_PATH}")
+if [ -n "${CUSTOM_OPENMP_LIB}" ]; then
+    CUSTOM_OPENMP_LIB=$(cygpath -w "${CUSTOM_OPENMP_LIB}")
+    CUSTOM_OPENMP_INCLUDE=$(cygpath -w "${CUSTOM_OPENMP_INCLUDE}")
+fi
+if [ -n "${CUSTOM_PROTOC}" ]; then
+    CUSTOM_PROTOC=$(cygpath -w "${CUSTOM_PROTOC}")
+    CUSTOM_PROTOBUF_CMAKE_DIR=$(cygpath -w "${CUSTOM_PROTOBUF_CMAKE_DIR}")
+fi
+
 # Run CMake configuration
 echo -e "${YELLOW}Running CMake configuration...${NC}"
-cd "${BUILD_ROOT}"
-"${CMAKE_PATH}" "${CAFFE2_ROOT}" "${CMAKE_ARGS[@]}"
+pwsh.exe -Command "Set-Location '${BUILD_ROOT}'; & cmake '${CAFFE2_ROOT}' ${CMAKE_ARGS[*]}"
 
 # Determine number of parallel jobs
 if [ -z "$MAX_JOBS" ]; then
@@ -439,7 +449,7 @@ fi
 
 # Build
 echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
-"${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
+pwsh.exe -Command "Set-Location '${BUILD_ROOT}'; & cmake --build . --target install -- '-j${MAX_JOBS}'"
 
 # Copy all build artifacts to sysroot
 echo -e "${YELLOW}Copying libraries and headers to sysroot...${NC}"

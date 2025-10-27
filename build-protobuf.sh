@@ -115,9 +115,6 @@ case "$TARGET_TRIPLE" in
         ;;
     *-windows-*)
         PLATFORM="windows"
-        # Set MSYS path conversion env vars early for entire script
-        export MSYS_NO_PATHCONV=1
-        export MSYS2_ARG_CONV_EXCL="*"
         ;;
     *)
         echo -e "${RED}Error: Unsupported target triple: $TARGET_TRIPLE${NC}"
@@ -276,6 +273,15 @@ else
     NINJA_PATH=$(which ninja)
 fi
 
+# Convert paths to Windows format if on Windows (for PowerShell/CMake)
+if [ "$PLATFORM" = "windows" ]; then
+    PROTOBUF_SOURCE_DIR=$(cygpath -w "${PROTOBUF_SOURCE_DIR}")
+    BUILD_ROOT=$(cygpath -w "${BUILD_ROOT}")
+    INSTALL_PREFIX=$(cygpath -w "${INSTALL_PREFIX}")
+    NINJA_PATH=$(cygpath -w "${NINJA_PATH}")
+    CMAKE_PATH=$(cygpath -w "${CMAKE_PATH}")
+fi
+
 # Prepare CMake arguments
 CMAKE_ARGS=()
 
@@ -343,8 +349,13 @@ echo ""
 
 # Run CMake configuration
 echo -e "${YELLOW}Running CMake configuration...${NC}"
-cd "${BUILD_ROOT}"
-"${CMAKE_PATH}" "${PROTOBUF_SOURCE_DIR}" "${CMAKE_ARGS[@]}"
+if [ "$PLATFORM" = "windows" ]; then
+    # Use PowerShell for Windows to handle paths with backslashes
+    pwsh.exe -Command "Set-Location '${BUILD_ROOT}'; & cmake '${PROTOBUF_SOURCE_DIR}' ${CMAKE_ARGS[*]}"
+else
+    cd "${BUILD_ROOT}"
+    "${CMAKE_PATH}" "${PROTOBUF_SOURCE_DIR}" "${CMAKE_ARGS[@]}"
+fi
 
 # Determine number of parallel jobs
 if [ -z "$MAX_JOBS" ]; then
@@ -357,7 +368,13 @@ fi
 
 # Build
 echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
-"${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
+if [ "$PLATFORM" = "windows" ]; then
+    # Use PowerShell for Windows to handle paths with backslashes
+    pwsh.exe -Command "Set-Location '${BUILD_ROOT}'; & cmake --build . --target install -- '-j${MAX_JOBS}'"
+else
+    cd "${BUILD_ROOT}"
+    "${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
+fi
 
 # Copy Abseil libraries to sysroot (protobuf depends on Abseil)
 echo -e "${YELLOW}Copying Abseil libraries to sysroot...${NC}"
