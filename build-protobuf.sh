@@ -12,7 +12,7 @@ set -e
 
 # Add MSYS2 to PATH if present
 if [ -d "/c/msys2/usr/bin" ]; then
-    export PATH=$PATH:/c/msys2/usr/bin
+    export PATH=/c/msys2/usr/bin:$PATH
 fi
 
 # Detect script location and repo root
