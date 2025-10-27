@@ -168,6 +168,9 @@ if [ "$PLATFORM" = "windows" ]; then
     fi
 fi
 
+# Debug: Print PATH to help diagnose issues
+echo "PATH: $PATH"
+
 # Check for required tools
 if ! command -v git &> /dev/null; then
     echo -e "${RED}Error: git not found${NC}"

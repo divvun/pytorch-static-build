@@ -20,8 +20,12 @@ rm -rf pytorch
 # Download tarball
 curl -sSfL "${PYTORCH_URL}" -o "${TARBALL}"
 
-# Extract
-tar xf "${TARBALL}"
+# Extract (use bsdtar on Windows because msys tar is broken)
+if [ "$WINDOWS" = "1" ]; then
+    bsdtar -xf "${TARBALL}"
+else
+    tar xf "${TARBALL}"
+fi
 
 # Clean up tarball
 rm "${TARBALL}"
