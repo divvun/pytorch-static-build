@@ -122,6 +122,34 @@ case "$TARGET_TRIPLE" in
         ;;
 esac
 
+# Delegate to PowerShell script on Windows
+if [ "$PLATFORM" = "windows" ]; then
+    echo -e "${YELLOW}Delegating to PowerShell script for Windows build...${NC}"
+
+    # Build PowerShell arguments from bash arguments
+    PS_ARGS="-Target $TARGET_TRIPLE"
+
+    if [ "$BUILD_TYPE" = "Debug" ]; then
+        PS_ARGS="$PS_ARGS -Debug"
+    elif [ "$BUILD_TYPE" = "RelWithDebInfo" ]; then
+        PS_ARGS="$PS_ARGS -RelWithDebInfo"
+    elif [ "$BUILD_TYPE" = "MinSizeRel" ]; then
+        PS_ARGS="$PS_ARGS -MinSize"
+    fi
+
+    if [ $CLEAN_BUILD -eq 0 ]; then
+        PS_ARGS="$PS_ARGS -NoClean"
+    fi
+
+    if [ $VERBOSE -eq 1 ]; then
+        PS_ARGS="$PS_ARGS -Verbose"
+    fi
+
+    # Execute PowerShell script
+    pwsh.exe -File "${SCRIPT_DIR}/build-protobuf.ps1" $PS_ARGS
+    exit $?
+fi
+
 # Windows: Auto-detect and add MSVC to PATH
 if [ "$PLATFORM" = "windows" ]; then
     if ! command -v cl.exe &> /dev/null; then
