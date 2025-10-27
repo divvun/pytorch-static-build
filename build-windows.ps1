@@ -20,7 +20,6 @@ param(
     [switch]$Shared,
     [switch]$Lite,
     [switch]$Full,
-    [switch]$Verbose,
     [switch]$Help
 )
 
@@ -65,7 +64,6 @@ if ($Help) {
     Write-Host "  -Shared              Build shared libraries"
     Write-Host "  -Lite                Build Lite Interpreter"
     Write-Host "  -Full                Build full interpreter (default)"
-    Write-Host "  -Verbose             Verbose output"
     Write-Host "  -Help                Show this help message"
     exit 0
 }
@@ -298,11 +296,6 @@ if ((Test-Path $CustomProtoc) -and (Test-Path $CustomProtobufLib)) {
 
 # Performance: use mimalloc allocator
 $CMakeArgs += "-DUSE_MIMALLOC=ON"
-
-# Verbose
-if ($Verbose) {
-    $CMakeArgs += "-DCMAKE_VERBOSE_MAKEFILE=ON"
-}
 
 # Display build configuration
 Write-Host ""

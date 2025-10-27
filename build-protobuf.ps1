@@ -15,7 +15,6 @@ param(
     [switch]$Release,
     [switch]$RelWithDebInfo,
     [switch]$MinSize,
-    [switch]$Verbose,
     [switch]$Help
 )
 
@@ -48,7 +47,6 @@ if ($Help) {
     Write-Host "  -Release             Build optimized release (default)"
     Write-Host "  -RelWithDebInfo      Build optimized with debug symbols"
     Write-Host "  -MinSize             Build for minimum size"
-    Write-Host "  -Verbose             Verbose output"
     Write-Host "  -Help                Show this help message"
     exit 0
 }
@@ -172,10 +170,6 @@ $CMakeArgs = @(
     "-Dprotobuf_BUILD_EXAMPLES=OFF",
     "-Dprotobuf_BUILD_PROTOC_BINARIES=ON"
 )
-
-if ($Verbose) {
-    $CMakeArgs += "-DCMAKE_VERBOSE_MAKEFILE=ON"
-}
 
 # Display build configuration
 Write-Host ""

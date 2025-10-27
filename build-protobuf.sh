@@ -141,10 +141,6 @@ if [ "$PLATFORM" = "windows" ]; then
         PS_ARGS="$PS_ARGS -NoClean"
     fi
 
-    if [ $VERBOSE -eq 1 ]; then
-        PS_ARGS="$PS_ARGS -Verbose"
-    fi
-
     # Execute PowerShell script
     pwsh.exe -File "${SCRIPT_DIR}/build-protobuf.ps1" $PS_ARGS
     exit $?
