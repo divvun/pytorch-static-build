@@ -8,6 +8,11 @@
 
 set -e
 
+# Add MSYS2 to PATH if present
+if [ -d "/c/msys2/usr/bin" ]; then
+    export PATH=/c/msys2/usr/bin:$PATH
+fi
+
 PYTORCH_VERSION="v2.8.0"
 PYTORCH_URL="https://github.com/divvun/pytorch-static-build/releases/download/pytorch%2F${PYTORCH_VERSION}/pytorch-${PYTORCH_VERSION}.src.tar.gz"
 TARBALL="pytorch.tar.gz"
