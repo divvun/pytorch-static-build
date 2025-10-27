@@ -252,7 +252,8 @@ mkdir -p "${BUILD_ROOT}"
 CMAKE_ARGS=()
 
 # Python configuration
-CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=$($PYTHON -c 'import sysconfig; print(sysconfig.get_path("purelib"))')")
+PYTHON_PREFIX_PATH=$($PYTHON -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
+CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${PYTHON_PREFIX_PATH}")
 CMAKE_ARGS+=("-DPython_EXECUTABLE=$($PYTHON -c 'import sys; print(sys.executable)')")
 
 # Use Ninja
@@ -285,6 +286,10 @@ CMAKE_ARGS+=("-DIOS_ARCH=${IOS_ARCH}")
 # Build configuration
 CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}")
 CMAKE_ARGS+=("-DCMAKE_BUILD_TYPE=${BUILD_TYPE}")
+
+# Set C++17 standard explicitly for consistent Abseil string_view detection
+CMAKE_ARGS+=("-DCMAKE_CXX_STANDARD=17")
+
 CMAKE_ARGS+=("-DBUILD_SHARED_LIBS=OFF")  # iOS always uses static libraries
 
 # Bitcode
@@ -325,6 +330,7 @@ CMAKE_ARGS+=("-DUSE_OPENCV=OFF")
 CMAKE_ARGS+=("-DUSE_MPI=OFF")
 CMAKE_ARGS+=("-DUSE_NUMPY=OFF")
 CMAKE_ARGS+=("-DUSE_MKLDNN=OFF")
+CMAKE_ARGS+=("-DUSE_FBGEMM=OFF")
 CMAKE_ARGS+=("-DUSE_KINETO=OFF")
 CMAKE_ARGS+=("-DUSE_PROF=OFF")
 

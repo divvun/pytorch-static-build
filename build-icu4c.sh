@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# build-libomp.sh - Build LLVM OpenMP runtime as static library
+# build-icu4c.sh - Build ICU (International Components for Unicode) as static libraries
 #
 # Usage:
-#   ./build-libomp.sh --target aarch64-apple-darwin
-#   ./build-libomp.sh --target x86_64-unknown-linux-gnu
-#   ./build-libomp.sh --target x86_64-apple-darwin --debug
+#   ./build-icu4c.sh --target aarch64-apple-darwin
+#   ./build-icu4c.sh --target x86_64-unknown-linux-gnu
+#   ./build-icu4c.sh --target x86_64-apple-darwin --debug
 #
 
 set -e
@@ -77,7 +77,7 @@ while [[ $# -gt 0 ]]; do
             echo "  x86_64-apple-darwin         macOS Intel"
             echo "  aarch64-unknown-linux-gnu   Linux ARM64"
             echo "  x86_64-unknown-linux-gnu    Linux x86_64"
-            echo "  x86_64-pc-windows-msvc      Windows x64 (not recommended - static not officially supported)"
+            echo "  x86_64-pc-windows-msvc      Windows x64"
             exit 0
             ;;
         *)
@@ -95,19 +95,21 @@ if [ -z "$TARGET_TRIPLE" ]; then
     exit 1
 fi
 
-echo -e "${GREEN}Building LLVM OpenMP Runtime (libomp)${NC}"
+echo -e "${GREEN}Building ICU (International Components for Unicode)${NC}"
 
 # Detect platform from target triple
 case "$TARGET_TRIPLE" in
     *-apple-darwin)
         PLATFORM="darwin"
+        ICU_PLATFORM="MacOSX"
         ;;
     *-linux-*)
         PLATFORM="linux"
+        ICU_PLATFORM="Linux"
         ;;
     *-windows-*)
         PLATFORM="windows"
-        echo -e "${YELLOW}Warning: Static OpenMP is not officially supported on Windows${NC}"
+        ICU_PLATFORM="Cygwin/MSVC"
         ;;
     *)
         echo -e "${RED}Error: Unsupported target triple: $TARGET_TRIPLE${NC}"
@@ -116,48 +118,35 @@ case "$TARGET_TRIPLE" in
 esac
 
 # Check for required tools
-if ! command -v cmake &> /dev/null; then
-    echo -e "${RED}Error: cmake not found${NC}"
-    if [ "$PLATFORM" = "darwin" ]; then
-        echo "Install it with: brew install cmake"
-    else
-        echo "Install it with your package manager (e.g., apt install cmake)"
-    fi
-    exit 1
-fi
-
-if ! command -v ninja &> /dev/null; then
-    echo -e "${RED}Error: ninja not found${NC}"
-    if [ "$PLATFORM" = "darwin" ]; then
-        echo "Install it with: brew install ninja"
-    else
-        echo "Install it with your package manager (e.g., apt install ninja-build)"
-    fi
-    exit 1
-fi
-
 if ! command -v git &> /dev/null; then
     echo -e "${RED}Error: git not found${NC}"
+    echo "Install it with your package manager"
+    exit 1
+fi
+
+if ! command -v make &> /dev/null; then
+    echo -e "${RED}Error: make not found${NC}"
+    echo "Install it with your package manager"
     exit 1
 fi
 
 # Set up paths
-LLVM_PROJECT_DIR="${REPO_ROOT}/llvm-project"
-BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/openmp"
+ICU_SOURCE_DIR="${REPO_ROOT}/icu/icu4c/source"
+BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/icu"
 INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}"
 
-# Clone LLVM project if not already present
-if [ ! -d "${LLVM_PROJECT_DIR}" ]; then
-    echo -e "${YELLOW}Cloning LLVM project (shallow clone)...${NC}"
-    git clone --depth 1 https://github.com/llvm/llvm-project.git "${LLVM_PROJECT_DIR}"
+# Clone ICU if not already present
+if [ ! -d "${REPO_ROOT}/icu" ]; then
+    echo -e "${YELLOW}Cloning ICU from GitHub...${NC}"
+    git clone --depth 1 https://github.com/unicode-org/icu.git "${REPO_ROOT}/icu"
 else
-    echo -e "${GREEN}LLVM project already exists at ${LLVM_PROJECT_DIR}${NC}"
+    echo -e "${GREEN}Using existing ICU source at ${REPO_ROOT}/icu${NC}"
 fi
 
-# Verify OpenMP runtime directory exists
-if [ ! -d "${LLVM_PROJECT_DIR}/openmp/runtime" ]; then
-    echo -e "${RED}Error: OpenMP runtime not found at ${LLVM_PROJECT_DIR}/openmp/runtime${NC}"
-    echo "Try deleting llvm-project/ and re-running to clone fresh"
+# Verify ICU source directory exists
+if [ ! -f "${ICU_SOURCE_DIR}/configure" ]; then
+    echo -e "${RED}Error: ICU configure script not found at ${ICU_SOURCE_DIR}/configure${NC}"
+    echo "The ICU clone might be incomplete or corrupted. Try removing ${REPO_ROOT}/icu and running again."
     exit 1
 fi
 
@@ -175,15 +164,8 @@ if [ "$PLATFORM" = "darwin" ]; then
     export CC=$(xcrun -f clang)
     export CXX=$(xcrun -f clang++)
 
-    # Check for cmake and ninja from homebrew
-    ARCH=$(uname -m)
-    if [ "${ARCH}" = "arm64" ]; then
-        BREW_PREFIX="/opt/homebrew"
-    else
-        BREW_PREFIX="/usr/local"
-    fi
-    CMAKE_PATH="${BREW_PREFIX}/bin/cmake"
-    NINJA_PATH="${BREW_PREFIX}/bin/ninja"
+    # Set SDK root for proper linking
+    export SDKROOT=$(xcrun --show-sdk-path)
 elif [ "$PLATFORM" = "linux" ]; then
     # Linux: prefer clang if available, otherwise gcc
     if command -v clang &> /dev/null; then
@@ -192,71 +174,94 @@ elif [ "$PLATFORM" = "linux" ]; then
     else
         export CC=gcc
         export CXX=g++
+        ICU_PLATFORM="Linux/gcc"
     fi
-    CMAKE_PATH=$(which cmake)
-    NINJA_PATH=$(which ninja)
 else
     # Windows
-    CMAKE_PATH=$(which cmake)
-    NINJA_PATH=$(which ninja)
+    export CC=cl.exe
+    export CXX=cl.exe
 fi
 
-# Prepare CMake arguments
-CMAKE_ARGS=()
+# Set build flags based on build type
+case "$BUILD_TYPE" in
+    Debug)
+        CFLAGS_OPT="-O0 -g"
+        CXXFLAGS_OPT="-O0 -g"
+        ;;
+    Release)
+        CFLAGS_OPT="-O3"
+        CXXFLAGS_OPT="-O3"
+        ;;
+    RelWithDebInfo)
+        CFLAGS_OPT="-O2 -g"
+        CXXFLAGS_OPT="-O2 -g"
+        ;;
+    MinSizeRel)
+        CFLAGS_OPT="-Os"
+        CXXFLAGS_OPT="-Os"
+        ;;
+esac
 
-# Generator
-CMAKE_ARGS+=("-GNinja")
-CMAKE_ARGS+=("-DCMAKE_MAKE_PROGRAM=${NINJA_PATH}")
+# Prepare flags
+export CFLAGS="${CFLAGS_OPT}"
+export CXXFLAGS="${CXXFLAGS_OPT}"
 
-# Build configuration
-CMAKE_ARGS+=("-DCMAKE_BUILD_TYPE=${BUILD_TYPE}")
-CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}")
+# On Windows, add U_STATIC_IMPLEMENTATION for static library builds
+if [ "$PLATFORM" = "windows" ]; then
+    export CFLAGS="${CFLAGS} -DU_STATIC_IMPLEMENTATION"
+    export CXXFLAGS="${CXXFLAGS} -DU_STATIC_IMPLEMENTATION"
+fi
 
-# Set C++17 standard explicitly for consistent Abseil string_view detection
-CMAKE_ARGS+=("-DCMAKE_CXX_STANDARD=17")
-
-# Compilers
-CMAKE_ARGS+=("-DCMAKE_C_COMPILER=${CC}")
-CMAKE_ARGS+=("-DCMAKE_CXX_COMPILER=${CXX}")
-
-# Critical option: Build static library
-CMAKE_ARGS+=("-DLIBOMP_ENABLE_SHARED=OFF")
-
-# Position independent code (needed for linking static lib into shared libs)
-CMAKE_ARGS+=("-DCMAKE_POSITION_INDEPENDENT_CODE=ON")
-
-# Disable testing and examples
-CMAKE_ARGS+=("-DOPENMP_ENABLE_TESTING=OFF")
-CMAKE_ARGS+=("-DLIBOMP_OMPT_SUPPORT=OFF")  # Disable OMPT (OpenMP Tools Interface) for simpler build
-
-# Platform-specific settings
+# macOS deployment target
 if [ "$PLATFORM" = "darwin" ]; then
-    CMAKE_ARGS+=("-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0")
-fi
-
-# Verbose
-if [ $VERBOSE -eq 1 ]; then
-    CMAKE_ARGS+=("-DCMAKE_VERBOSE_MAKEFILE=ON")
+    export MACOSX_DEPLOYMENT_TARGET=11.0
 fi
 
 # Display build configuration
 echo ""
-echo -e "${GREEN}=== OpenMP Build Configuration ===${NC}"
+echo -e "${GREEN}=== ICU Build Configuration ===${NC}"
 echo "Target triple:      ${TARGET_TRIPLE}"
 echo "Build type:         ${BUILD_TYPE}"
 echo "Platform:           ${PLATFORM}"
+echo "ICU platform:       ${ICU_PLATFORM}"
 echo "C compiler:         ${CC}"
 echo "C++ compiler:       ${CXX}"
-echo "LLVM source:        ${LLVM_PROJECT_DIR}"
+echo "CFLAGS:             ${CFLAGS}"
+echo "CXXFLAGS:           ${CXXFLAGS}"
+if [ "$PLATFORM" = "darwin" ]; then
+    echo "SDKROOT:            ${SDKROOT}"
+fi
+echo "ICU source:         ${ICU_SOURCE_DIR}"
 echo "Build directory:    ${BUILD_ROOT}"
 echo "Install prefix:     ${INSTALL_PREFIX}"
-echo -e "${GREEN}======================================${NC}"
+echo -e "${GREEN}===================================${NC}"
 echo ""
 
-# Run CMake configuration
-echo -e "${YELLOW}Running CMake configuration...${NC}"
+# Run configure
+echo -e "${YELLOW}Running ICU configure...${NC}"
 cd "${BUILD_ROOT}"
-"${CMAKE_PATH}" "${LLVM_PROJECT_DIR}/openmp" "${CMAKE_ARGS[@]}"
+
+# Build configure arguments
+CONFIGURE_ARGS=(
+    "--enable-static"
+    "--disable-shared"
+    "--disable-tests"
+    "--disable-samples"
+    "--prefix=${INSTALL_PREFIX}"
+)
+
+if [ $VERBOSE -eq 1 ]; then
+    CONFIGURE_ARGS+=("--enable-debug")
+fi
+
+# Use runConfigureICU if available, otherwise use configure directly
+if [ -f "${ICU_SOURCE_DIR}/runConfigureICU" ]; then
+    echo -e "${YELLOW}Using runConfigureICU for platform: ${ICU_PLATFORM}${NC}"
+    "${ICU_SOURCE_DIR}/runConfigureICU" "${ICU_PLATFORM}" "${CONFIGURE_ARGS[@]}"
+else
+    echo -e "${YELLOW}Using configure directly${NC}"
+    "${ICU_SOURCE_DIR}/configure" "${CONFIGURE_ARGS[@]}"
+fi
 
 # Determine number of parallel jobs
 if [ -z "$MAX_JOBS" ]; then
@@ -269,18 +274,26 @@ fi
 
 # Build
 echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
-"${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
+make -j${MAX_JOBS}
+
+# Install
+echo -e "${YELLOW}Installing to ${INSTALL_PREFIX}...${NC}"
+make install
 
 echo ""
-echo -e "${GREEN}OpenMP build completed successfully!${NC}"
+echo -e "${GREEN}ICU build completed successfully!${NC}"
 echo ""
 echo "Target: ${TARGET_TRIPLE}"
 echo ""
 echo "Library files:"
-ls -lh "${INSTALL_PREFIX}/lib/"libomp* 2>/dev/null || echo "  (none found - check build output)"
+ls -lh "${INSTALL_PREFIX}/lib/"libicu* 2>/dev/null || echo "  (libraries not found - check build output)"
 echo ""
 echo "Header files:"
-ls -lh "${INSTALL_PREFIX}/include/"omp* 2>/dev/null || echo "  (none found - check build output)"
+ls -d "${INSTALL_PREFIX}/include/unicode" 2>/dev/null || echo "  (headers not found - check build output)"
 echo ""
-echo "You can now link against: ${INSTALL_PREFIX}/lib/libomp.a"
+echo "You can now link against ICU static libraries:"
+echo "  libicuuc.a  - Unicode Common"
+echo "  libicui18n.a - Internationalization"
+echo "  libicudata.a - ICU Data"
+echo "  libicuio.a  - ICU I/O (optional)"
 echo ""

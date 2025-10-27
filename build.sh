@@ -49,6 +49,9 @@ show_help() {
     echo "    x86_64-pc-windows-msvc     Windows x64 (MSVC)"
     echo "    i686-pc-windows-msvc       Windows x86 (MSVC)"
     echo ""
+    echo "Dependency Options:"
+    echo "  --no-deps                  Skip building dependencies (default: build deps)"
+    echo ""
     echo "Build Options (passed to underlying script):"
     echo "  --debug                    Build with debug symbols"
     echo "  --release                  Build optimized release (default)"
@@ -68,12 +71,14 @@ show_help() {
     echo "  ./build.sh --target aarch64-apple-ios --debug"
     echo "  ./build.sh --target aarch64-linux-android --vulkan"
     echo "  ./build.sh --target x86_64-unknown-linux-gnu --distributed"
-    echo "  ./build.sh --target x86_64-pc-windows-msvc --shared"
+    echo "  ./build.sh --target x86_64-pc-windows-msvc --no-deps"
 }
 
-# Parse target flag
+# Parse target flag and options
 TARGET=""
-BUILD_ARGS=()
+WITH_DEPS=1  # Build dependencies by default
+COMMON_ARGS=()  # Args passed to both dependency builds and PyTorch build
+PLATFORM_ARGS=()  # Args passed only to PyTorch build
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -81,17 +86,29 @@ while [[ $# -gt 0 ]]; do
             TARGET="$2"
             shift 2
             ;;
+        --no-deps)
+            WITH_DEPS=0
+            shift
+            ;;
         --help|-h)
             show_help
             exit 0
             ;;
+        # Common args that apply to all builds
+        --debug|--release|--relwithdebinfo|--minsize|--minsizerel|--no-clean|--verbose|-v)
+            COMMON_ARGS+=("$1")
+            shift
+            ;;
+        # Platform-specific args (for PyTorch only)
         *)
-            # Pass through all other arguments
-            BUILD_ARGS+=("$1")
+            PLATFORM_ARGS+=("$1")
             shift
             ;;
     esac
 done
+
+# Combine args for PyTorch build
+BUILD_ARGS=("${COMMON_ARGS[@]}" "${PLATFORM_ARGS[@]}")
 
 # Check if target was specified
 if [ -z "$TARGET" ]; then
@@ -99,6 +116,68 @@ if [ -z "$TARGET" ]; then
     echo ""
     show_help
     exit 1
+fi
+
+# Build dependencies if requested
+if [ $WITH_DEPS -eq 1 ]; then
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}Building dependencies for ${TARGET}${NC}"
+    echo -e "${GREEN}========================================${NC}"
+    echo ""
+
+    INSTALL_PREFIX="${SCRIPT_DIR}/target/${TARGET}"
+    echo -e "${YELLOW}Install prefix: ${INSTALL_PREFIX}${NC}"
+    echo ""
+
+    # 1. Build Protobuf
+    # Always build host protoc for cross-compilation to ensure correct version
+    case "$TARGET" in
+        aarch64-apple-ios|aarch64-apple-ios-sim|x86_64-apple-ios-sim|arm64_32-apple-watchos)
+            # iOS/watchOS: Need macOS host protoc
+            HOST_ARCH=$(uname -m)
+            if [ "$HOST_ARCH" = "arm64" ]; then
+                HOST_TARGET="aarch64-apple-darwin"
+            else
+                HOST_TARGET="x86_64-apple-darwin"
+            fi
+            echo -e "${YELLOW}Building host protoc for ${HOST_TARGET} (required for cross-compilation)...${NC}"
+            "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_TARGET}" "${COMMON_ARGS[@]}"
+            ;;
+        *-linux-android)
+            # Android: Need Linux host protoc
+            HOST_ARCH=$(uname -m)
+            if [ "$HOST_ARCH" = "aarch64" ]; then
+                HOST_TARGET="aarch64-unknown-linux-gnu"
+            else
+                HOST_TARGET="x86_64-unknown-linux-gnu"
+            fi
+            echo -e "${YELLOW}Building host protoc for ${HOST_TARGET} (required for cross-compilation)...${NC}"
+            "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_TARGET}" "${COMMON_ARGS[@]}"
+            ;;
+    esac
+
+    # Build target protobuf - always build to ensure correct version
+    echo -e "${YELLOW}Building Protobuf for ${TARGET}...${NC}"
+    "${SCRIPT_DIR}/build-protobuf.sh" --target "${TARGET}" "${COMMON_ARGS[@]}"
+
+    # 2. Build OpenMP (only for macOS, Linux, Windows)
+    case "$TARGET" in
+        *-apple-darwin|*-unknown-linux-gnu|*-pc-windows-msvc)
+            echo -e "${YELLOW}Building OpenMP for ${TARGET}...${NC}"
+            "${SCRIPT_DIR}/build-libomp.sh" --target "${TARGET}" "${COMMON_ARGS[@]}"
+            ;;
+        *)
+            echo -e "${GREEN}Skipping OpenMP for ${TARGET} (not needed for this platform)${NC}"
+            ;;
+    esac
+
+    # 3. Build ICU4C (all platforms)
+    echo -e "${YELLOW}Building ICU4C for ${TARGET}...${NC}"
+    "${SCRIPT_DIR}/build-icu4c.sh" --target "${TARGET}" "${COMMON_ARGS[@]}"
+
+    echo ""
+    echo -e "${GREEN}Dependencies built successfully${NC}"
+    echo ""
 fi
 
 # Determine which build script to use and what flags to pass

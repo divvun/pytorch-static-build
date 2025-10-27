@@ -143,7 +143,7 @@ fi
 
 # Set up paths
 PROTOBUF_SOURCE_DIR="${REPO_ROOT}/protobuf"
-BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/protobuf-build"
+BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/protobuf"
 INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}"
 
 # Clone protobuf if not already present
@@ -216,8 +216,18 @@ CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}")
 CMAKE_ARGS+=("-DCMAKE_C_COMPILER=${CC}")
 CMAKE_ARGS+=("-DCMAKE_CXX_COMPILER=${CXX}")
 
+# Set C++17 standard explicitly
+CMAKE_ARGS+=("-DCMAKE_CXX_STANDARD=17")
+
 # Critical options: Build static libraries
 CMAKE_ARGS+=("-Dprotobuf_BUILD_SHARED_LIBS=OFF")
+
+# Force protobuf to fetch and build Abseil instead of using system version
+CMAKE_ARGS+=("-Dprotobuf_FORCE_FETCH_DEPENDENCIES=ON")
+
+# Pass Abseil options to avoid inline namespace mangling issues
+CMAKE_ARGS+=("-DABSL_ENABLE_INSTALL=ON")
+CMAKE_ARGS+=("-DABSL_PROPAGATE_CXX_STD=ON")
 
 # Position independent code (needed for linking static lib into shared libs)
 CMAKE_ARGS+=("-DCMAKE_POSITION_INDEPENDENT_CODE=ON")
@@ -271,6 +281,27 @@ fi
 echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
 "${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
 
+# Copy Abseil libraries to sysroot (protobuf depends on Abseil)
+echo -e "${YELLOW}Copying Abseil libraries to sysroot...${NC}"
+ABSEIL_LIBS=$(find "${BUILD_ROOT}" -name "libabsl_*.a" 2>/dev/null || true)
+if [ -n "$ABSEIL_LIBS" ]; then
+    echo "$ABSEIL_LIBS" | while read -r lib; do
+        cp -v "$lib" "${INSTALL_PREFIX}/lib/"
+    done
+    echo -e "${GREEN}Copied $(echo "$ABSEIL_LIBS" | wc -l | tr -d ' ') Abseil libraries${NC}"
+else
+    echo -e "${YELLOW}Warning: No Abseil libraries found in build directory${NC}"
+fi
+
+# Copy Abseil headers if present
+if [ -d "${BUILD_ROOT}/abseil-cpp" ]; then
+    echo -e "${YELLOW}Copying Abseil headers...${NC}"
+    cp -rf "${BUILD_ROOT}/abseil-cpp/absl" "${INSTALL_PREFIX}/include/" 2>/dev/null || true
+elif [ -d "${BUILD_ROOT}/_deps/abseil-cpp-src/absl" ]; then
+    echo -e "${YELLOW}Copying Abseil headers...${NC}"
+    cp -rf "${BUILD_ROOT}/_deps/abseil-cpp-src/absl" "${INSTALL_PREFIX}/include/" 2>/dev/null || true
+fi
+
 echo ""
 echo -e "${GREEN}Protobuf build completed successfully!${NC}"
 echo ""
@@ -282,10 +313,19 @@ echo ""
 echo "Library files:"
 ls -lh "${INSTALL_PREFIX}/lib/"libproto* 2>/dev/null || echo "  (libraries not found - check build output)"
 echo ""
+echo "Abseil libraries:"
+if ls "${INSTALL_PREFIX}/lib/"libabsl_*.a 1> /dev/null 2>&1; then
+    ls -lh "${INSTALL_PREFIX}/lib/"libabsl_*.a
+else
+    echo "  (no Abseil libraries found)"
+fi
+echo ""
 echo "Header files:"
 ls -d "${INSTALL_PREFIX}/include/google/protobuf" 2>/dev/null || echo "  (headers not found - check build output)"
+ls -d "${INSTALL_PREFIX}/include/absl" 2>/dev/null || echo "  (Abseil headers not found - check build output)"
 echo ""
 echo "You can now use:"
 echo "  protoc: ${INSTALL_PREFIX}/bin/protoc"
 echo "  libprotobuf.a: ${INSTALL_PREFIX}/lib/libprotobuf.a"
+echo "  libabsl_*.a: ${INSTALL_PREFIX}/lib/libabsl_*.a"
 echo ""

@@ -28,7 +28,7 @@ CLEAN_BUILD=1  # Clean by default for reliable builds
 BUILD_SHARED_LIBS=0  # Build static libraries by default
 USE_DISTRIBUTED=0
 USE_OPENMP=1
-USE_PYTORCH_METAL=1
+USE_PYTORCH_METAL=0
 BUILD_LITE_INTERPRETER=0
 VERBOSE=0
 
@@ -204,8 +204,12 @@ export MACOSX_DEPLOYMENT_TARGET=11.0
 CMAKE_ARGS=()
 
 # Python configuration (needed for CMake generation)
-CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=$($PYTHON -c 'import sysconfig; print(sysconfig.get_path("purelib"))')")
+PYTHON_PREFIX_PATH=$($PYTHON -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
+CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${PYTHON_PREFIX_PATH}")
 CMAKE_ARGS+=("-DPython_EXECUTABLE=$($PYTHON -c 'import sys; print(sys.executable)')")
+
+# Ensure ONNX and other components use our custom Abseil
+CMAKE_ARGS+=("-Dabsl_DIR=${INSTALL_PREFIX}/lib/cmake/absl")
 
 # Use Ninja
 CMAKE_ARGS+=("-GNinja")
@@ -217,6 +221,9 @@ CMAKE_ARGS+=("-DCMAKE_WARN_DEPRECATED=OFF")
 # Build configuration
 CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}")
 CMAKE_ARGS+=("-DCMAKE_BUILD_TYPE=${BUILD_TYPE}")
+
+# Set C++17 standard explicitly for consistent Abseil string_view detection
+CMAKE_ARGS+=("-DCMAKE_CXX_STANDARD=17")
 
 # Static or shared libraries
 if [ $BUILD_SHARED_LIBS -eq 1 ]; then
@@ -277,7 +284,9 @@ CMAKE_ARGS+=("-DUSE_OPENCV=OFF")
 CMAKE_ARGS+=("-DUSE_MPI=OFF")
 CMAKE_ARGS+=("-DUSE_KINETO=OFF")
 CMAKE_ARGS+=("-DUSE_MKLDNN=OFF")
+CMAKE_ARGS+=("-DUSE_FBGEMM=OFF")
 CMAKE_ARGS+=("-DUSE_PROF=OFF")
+CMAKE_ARGS+=("-DUSE_MPS=OFF")
 
 # Check for custom-built Protobuf
 CUSTOM_PROTOC="${INSTALL_PREFIX}/bin/protoc"

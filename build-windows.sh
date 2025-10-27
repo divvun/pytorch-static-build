@@ -233,7 +233,7 @@ CMAKE_ARGS=()
 PYTHON_PREFIX_PATH=$($PYTHON -c 'import sysconfig; print(sysconfig.get_path("purelib"))' | sed 's|\\|/|g')
 PYTHON_EXECUTABLE=$($PYTHON -c 'import sys; print(sys.executable)' | sed 's|\\|/|g')
 
-CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${PYTHON_PREFIX_PATH}")
+CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${PYTHON_PREFIX_PATH}")
 CMAKE_ARGS+=("-DPython_EXECUTABLE=${PYTHON_EXECUTABLE}")
 
 # Use Ninja
@@ -246,6 +246,9 @@ CMAKE_ARGS+=("-DCMAKE_WARN_DEPRECATED=OFF")
 # Build configuration
 CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}")
 CMAKE_ARGS+=("-DCMAKE_BUILD_TYPE=${BUILD_TYPE}")
+
+# Set C++17 standard explicitly for consistent Abseil string_view detection
+CMAKE_ARGS+=("-DCMAKE_CXX_STANDARD=17")
 
 # MSVC-specific: Use static runtime for static builds
 if [ $BUILD_SHARED_LIBS -eq 0 ]; then
@@ -307,6 +310,7 @@ CMAKE_ARGS+=("-DUSE_OPENCV=OFF")
 CMAKE_ARGS+=("-DUSE_MPI=OFF")
 CMAKE_ARGS+=("-DUSE_KINETO=OFF")
 CMAKE_ARGS+=("-DUSE_MKLDNN=OFF")
+CMAKE_ARGS+=("-DUSE_FBGEMM=OFF")
 CMAKE_ARGS+=("-DUSE_PROF=OFF")
 
 # Check for custom-built Protobuf
