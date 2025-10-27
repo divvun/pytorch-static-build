@@ -30,10 +30,15 @@ USE_DISTRIBUTED=1  # Enable distributed by default on Linux
 USE_OPENMP=1
 BUILD_LITE_INTERPRETER=0
 VERBOSE=0
+TARGET_OVERRIDE=""  # Override target triple for cross-compilation
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --target)
+            TARGET_OVERRIDE="$2"
+            shift 2
+            ;;
         --no-clean)
             CLEAN_BUILD=0
             shift
@@ -86,6 +91,7 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: $0 [options]"
             echo ""
             echo "Build Options:"
+            echo "  --target <triple>    Target triple (x86_64-unknown-linux-gnu or aarch64-unknown-linux-gnu)"
             echo "  --no-clean           Skip cleaning build directories (cleans by default)"
             echo "  --static             Build static libraries (default)"
             echo "  --shared             Build shared libraries instead of static"
@@ -159,9 +165,9 @@ if [ "$(pwd)" != "${PYTORCH_ROOT}" ]; then
     cd "${PYTORCH_ROOT}"
 fi
 
-# Detect architecture
-ARCH=$(uname -m)
-echo -e "${GREEN}Detected architecture: ${ARCH}${NC}"
+# Detect host architecture
+HOST_ARCH=$(uname -m)
+echo -e "${GREEN}Detected host architecture: ${HOST_ARCH}${NC}"
 
 # Get Python executable from uv
 if [ ! -d ".venv" ]; then
@@ -194,13 +200,37 @@ if [ ! -f "third_party/eigen/CMakeLists.txt" ]; then
 fi
 
 # Determine target triple
-if [ "${ARCH}" = "x86_64" ]; then
-    TARGET_TRIPLE="x86_64-unknown-linux-gnu"
-elif [ "${ARCH}" = "aarch64" ]; then
-    TARGET_TRIPLE="aarch64-unknown-linux-gnu"
+if [ -n "${TARGET_OVERRIDE}" ]; then
+    # Use override if provided
+    TARGET_TRIPLE="${TARGET_OVERRIDE}"
+    echo -e "${GREEN}Using target override: ${TARGET_TRIPLE}${NC}"
 else
-    echo -e "${RED}Error: Unsupported architecture: ${ARCH}${NC}"
+    # Auto-detect from host architecture
+    if [ "${HOST_ARCH}" = "x86_64" ]; then
+        TARGET_TRIPLE="x86_64-unknown-linux-gnu"
+    elif [ "${HOST_ARCH}" = "aarch64" ]; then
+        TARGET_TRIPLE="aarch64-unknown-linux-gnu"
+    else
+        echo -e "${RED}Error: Unsupported architecture: ${HOST_ARCH}${NC}"
+        exit 1
+    fi
+fi
+
+# Determine host target triple (for protoc)
+if [ "${HOST_ARCH}" = "x86_64" ]; then
+    HOST_TRIPLE="x86_64-unknown-linux-gnu"
+elif [ "${HOST_ARCH}" = "aarch64" ]; then
+    HOST_TRIPLE="aarch64-unknown-linux-gnu"
+else
+    echo -e "${RED}Error: Unsupported host architecture: ${HOST_ARCH}${NC}"
     exit 1
+fi
+
+# Detect cross-compilation
+IS_CROSS_COMPILE=0
+if [ "${TARGET_TRIPLE}" != "${HOST_TRIPLE}" ]; then
+    IS_CROSS_COMPILE=1
+    echo -e "${YELLOW}Cross-compiling: ${HOST_TRIPLE} -> ${TARGET_TRIPLE}${NC}"
 fi
 
 # Set up build and install directories
@@ -298,21 +328,45 @@ CMAKE_ARGS+=("-DUSE_FBGEMM=OFF")
 CMAKE_ARGS+=("-DUSE_PROF=OFF")
 
 # Check for custom-built Protobuf
-CUSTOM_PROTOC="${INSTALL_PREFIX}/bin/protoc"
+# When cross-compiling, we need:
+# - protoc executable from HOST target (runs during build)
+# - protobuf libraries from TARGET (links into binary)
+if [ $IS_CROSS_COMPILE -eq 1 ]; then
+    HOST_INSTALL_PREFIX="${REPO_ROOT}/target/${HOST_TRIPLE}"
+    CUSTOM_PROTOC="${HOST_INSTALL_PREFIX}/bin/protoc"
+    echo -e "${YELLOW}Cross-compilation: Looking for host protoc in ${HOST_INSTALL_PREFIX}${NC}"
+else
+    CUSTOM_PROTOC="${INSTALL_PREFIX}/bin/protoc"
+fi
+
 CUSTOM_PROTOBUF_LIB="${INSTALL_PREFIX}/lib/libprotobuf.a"
 CUSTOM_PROTOBUF_CMAKE_DIR="${INSTALL_PREFIX}/lib/cmake/protobuf"
-if [ -f "${CUSTOM_PROTOC}" ] && [ -f "${CUSTOM_PROTOBUF_LIB}" ]; then
-    echo -e "${GREEN}Using custom-built static Protobuf from ${CUSTOM_PROTOBUF_LIB}${NC}"
-    CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=OFF")
-    CMAKE_ARGS+=("-DCAFFE2_CUSTOM_PROTOC_EXECUTABLE=${CUSTOM_PROTOC}")
-    CMAKE_ARGS+=("-DProtobuf_PROTOC_EXECUTABLE=${CUSTOM_PROTOC}")
-    # Point find_package(Protobuf CONFIG) to our custom protobuf
-    CMAKE_ARGS+=("-DProtobuf_DIR=${CUSTOM_PROTOBUF_CMAKE_DIR}")
-else
-    echo -e "${RED}Error: Custom protobuf not found!${NC}"
-    echo "Build protobuf first with: ./build-protobuf.sh --target ${TARGET_TRIPLE}"
+
+# Verify protoc executable exists
+if [ ! -f "${CUSTOM_PROTOC}" ]; then
+    echo -e "${RED}Error: Custom protoc not found at ${CUSTOM_PROTOC}!${NC}"
+    if [ $IS_CROSS_COMPILE -eq 1 ]; then
+        echo "Build host protoc first with: ./build-protobuf.sh --target ${HOST_TRIPLE}"
+    else
+        echo "Build protobuf first with: ./build-protobuf.sh --target ${TARGET_TRIPLE}"
+    fi
     exit 1
 fi
+
+# Verify protobuf library exists
+if [ ! -f "${CUSTOM_PROTOBUF_LIB}" ]; then
+    echo -e "${RED}Error: Custom protobuf library not found at ${CUSTOM_PROTOBUF_LIB}!${NC}"
+    echo "Build target protobuf first with: ./build-protobuf.sh --target ${TARGET_TRIPLE}"
+    exit 1
+fi
+
+echo -e "${GREEN}Using custom-built protoc from ${CUSTOM_PROTOC}${NC}"
+echo -e "${GREEN}Using custom-built static Protobuf from ${CUSTOM_PROTOBUF_LIB}${NC}"
+CMAKE_ARGS+=("-DBUILD_CUSTOM_PROTOBUF=OFF")
+CMAKE_ARGS+=("-DCAFFE2_CUSTOM_PROTOC_EXECUTABLE=${CUSTOM_PROTOC}")
+CMAKE_ARGS+=("-DProtobuf_PROTOC_EXECUTABLE=${CUSTOM_PROTOC}")
+# Point find_package(Protobuf CONFIG) to our custom protobuf
+CMAKE_ARGS+=("-DProtobuf_DIR=${CUSTOM_PROTOBUF_CMAKE_DIR}")
 
 # Performance: use mimalloc allocator
 CMAKE_ARGS+=("-DUSE_MIMALLOC=ON")

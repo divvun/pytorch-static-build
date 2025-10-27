@@ -131,28 +131,44 @@ if [ $WITH_DEPS -eq 1 ]; then
 
     # 1. Build Protobuf
     # Always build host protoc for cross-compilation to ensure correct version
+    HOST_ARCH=$(uname -m)
+    if [ "$HOST_ARCH" = "arm64" ]; then
+        HOST_DARWIN_TARGET="aarch64-apple-darwin"
+    else
+        HOST_DARWIN_TARGET="x86_64-apple-darwin"
+    fi
+
+    # Determine host Linux target for potential cross-compilation
+    if [ "$HOST_ARCH" = "aarch64" ]; then
+        HOST_LINUX_TARGET="aarch64-unknown-linux-gnu"
+    else
+        HOST_LINUX_TARGET="x86_64-unknown-linux-gnu"
+    fi
+
     case "$TARGET" in
+        aarch64-apple-darwin|x86_64-apple-darwin)
+            # macOS: Check if cross-compiling
+            if [ "$TARGET" != "$HOST_DARWIN_TARGET" ]; then
+                echo -e "${YELLOW}Building host protoc for ${HOST_DARWIN_TARGET} (required for cross-compilation)...${NC}"
+                "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_DARWIN_TARGET}" "${COMMON_ARGS[@]}"
+            fi
+            ;;
         aarch64-apple-ios|aarch64-apple-ios-sim|x86_64-apple-ios-sim|arm64_32-apple-watchos)
             # iOS/watchOS: Need macOS host protoc
-            HOST_ARCH=$(uname -m)
-            if [ "$HOST_ARCH" = "arm64" ]; then
-                HOST_TARGET="aarch64-apple-darwin"
-            else
-                HOST_TARGET="x86_64-apple-darwin"
+            echo -e "${YELLOW}Building host protoc for ${HOST_DARWIN_TARGET} (required for cross-compilation)...${NC}"
+            "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_DARWIN_TARGET}" "${COMMON_ARGS[@]}"
+            ;;
+        x86_64-unknown-linux-gnu|aarch64-unknown-linux-gnu)
+            # Linux: Check if cross-compiling
+            if [ "$TARGET" != "$HOST_LINUX_TARGET" ]; then
+                echo -e "${YELLOW}Building host protoc for ${HOST_LINUX_TARGET} (required for cross-compilation)...${NC}"
+                "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_LINUX_TARGET}" "${COMMON_ARGS[@]}"
             fi
-            echo -e "${YELLOW}Building host protoc for ${HOST_TARGET} (required for cross-compilation)...${NC}"
-            "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_TARGET}" "${COMMON_ARGS[@]}"
             ;;
         *-linux-android)
             # Android: Need Linux host protoc
-            HOST_ARCH=$(uname -m)
-            if [ "$HOST_ARCH" = "aarch64" ]; then
-                HOST_TARGET="aarch64-unknown-linux-gnu"
-            else
-                HOST_TARGET="x86_64-unknown-linux-gnu"
-            fi
-            echo -e "${YELLOW}Building host protoc for ${HOST_TARGET} (required for cross-compilation)...${NC}"
-            "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_TARGET}" "${COMMON_ARGS[@]}"
+            echo -e "${YELLOW}Building host protoc for ${HOST_LINUX_TARGET} (required for cross-compilation)...${NC}"
+            "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_LINUX_TARGET}" "${COMMON_ARGS[@]}"
             ;;
     esac
 
@@ -185,11 +201,11 @@ case "$TARGET" in
     # macOS targets
     aarch64-apple-darwin)
         echo -e "${GREEN}Building for macOS (Apple Silicon)${NC}"
-        exec "${SCRIPT_DIR}/build-macos.sh" "${BUILD_ARGS[@]}"
+        exec "${SCRIPT_DIR}/build-macos.sh" --target "${TARGET}" "${BUILD_ARGS[@]}"
         ;;
     x86_64-apple-darwin)
         echo -e "${GREEN}Building for macOS (Intel)${NC}"
-        exec "${SCRIPT_DIR}/build-macos.sh" "${BUILD_ARGS[@]}"
+        exec "${SCRIPT_DIR}/build-macos.sh" --target "${TARGET}" "${BUILD_ARGS[@]}"
         ;;
 
     # iOS targets
@@ -231,11 +247,11 @@ case "$TARGET" in
     # Linux targets
     x86_64-unknown-linux-gnu)
         echo -e "${GREEN}Building for Linux x86_64${NC}"
-        exec "${SCRIPT_DIR}/build-linux.sh" "${BUILD_ARGS[@]}"
+        exec "${SCRIPT_DIR}/build-linux.sh" --target "${TARGET}" "${BUILD_ARGS[@]}"
         ;;
     aarch64-unknown-linux-gnu)
         echo -e "${GREEN}Building for Linux ARM64${NC}"
-        exec "${SCRIPT_DIR}/build-linux.sh" "${BUILD_ARGS[@]}"
+        exec "${SCRIPT_DIR}/build-linux.sh" --target "${TARGET}" "${BUILD_ARGS[@]}"
         ;;
 
     # Windows targets
