@@ -331,7 +331,9 @@ echo ""
 # Run CMake configuration
 echo -e "${YELLOW}Running CMake configuration...${NC}"
 cd "${BUILD_ROOT}"
+export MSYS_NO_PATHCONV=1
 "${CMAKE_PATH}" "${LLVM_PROJECT_DIR}/openmp" "${CMAKE_ARGS[@]}"
+unset MSYS_NO_PATHCONV
 
 # Determine number of parallel jobs
 if [ -z "$MAX_JOBS" ]; then
@@ -344,7 +346,9 @@ fi
 
 # Build
 echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
+export MSYS_NO_PATHCONV=1
 "${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
+unset MSYS_NO_PATHCONV
 
 echo ""
 echo -e "${GREEN}OpenMP build completed successfully!${NC}"

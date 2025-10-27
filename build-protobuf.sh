@@ -341,7 +341,9 @@ echo ""
 # Run CMake configuration
 echo -e "${YELLOW}Running CMake configuration...${NC}"
 cd "${BUILD_ROOT}"
+export MSYS_NO_PATHCONV=1
 "${CMAKE_PATH}" "${PROTOBUF_SOURCE_DIR}" "${CMAKE_ARGS[@]}"
+unset MSYS_NO_PATHCONV
 
 # Determine number of parallel jobs
 if [ -z "$MAX_JOBS" ]; then
@@ -354,7 +356,9 @@ fi
 
 # Build
 echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
+export MSYS_NO_PATHCONV=1
 "${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
+unset MSYS_NO_PATHCONV
 
 # Copy Abseil libraries to sysroot (protobuf depends on Abseil)
 echo -e "${YELLOW}Copying Abseil libraries to sysroot...${NC}"

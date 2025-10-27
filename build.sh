@@ -10,6 +10,11 @@
 
 set -e
 
+# Add MSYS2 to PATH if present
+if [ -d "/c/msys2/usr/bin" ]; then
+    export PATH=/c/msys2/usr/bin:$PATH
+fi
+
 # Detect script directory
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
