@@ -129,6 +129,7 @@ if [ "$PLATFORM" = "windows" ]; then
         VS_PATHS=(
             "/c/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC"
             "/c/Program Files/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC"
+            "/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC"
             "/c/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC"
             "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC"
             "/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC"
@@ -154,8 +155,15 @@ if [ "$PLATFORM" = "windows" ]; then
         done
 
         if [ $MSVC_FOUND -eq 0 ]; then
-            echo "Warning: Could not locate MSVC automatically"
-            echo "MSVC will be required for Windows builds"
+            echo -e "${RED}Error: Could not locate MSVC automatically${NC}"
+            echo ""
+            echo "Please ensure you have Visual Studio 2022 or 2019 installed with C++ build tools"
+            echo "Or manually add MSVC to PATH:"
+            echo "  export PATH=\"/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/<version>/bin/Hostx64/x64:\$PATH\""
+            echo ""
+            echo "Download Visual Studio Build Tools from:"
+            echo "  https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022"
+            exit 1
         fi
     fi
 fi

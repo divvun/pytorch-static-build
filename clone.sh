@@ -8,6 +8,8 @@
 
 set -e
 
+echo "--- Cloning PyTorch repository and submodules"
+
 # Windows: Add MSYS2 to PATH and enable long paths
 if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
     export PATH=$PATH:/c/msys2/usr/bin
