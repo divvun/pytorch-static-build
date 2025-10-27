@@ -287,6 +287,10 @@ mkdir -p "${BUILD_ROOT}"
 PYTHON_PREFIX_PATH=$($PYTHON -c 'import sysconfig; print(sysconfig.get_path("purelib"))' | sed 's|\\|/|g')
 PYTHON_EXECUTABLE=$($PYTHON -c 'import sys; print(sys.executable)' | sed 's|\\|/|g')
 
+# Prevent path mangling when building CMAKE_ARGS
+export MSYS_NO_PATHCONV=1
+export MSYS2_ARG_CONV_EXCL="*"
+
 # Prepare CMake arguments
 CMAKE_ARGS=()
 
@@ -450,6 +454,10 @@ fi
 # Build
 echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
 pwsh.exe -Command "Set-Location '${BUILD_ROOT}'; & cmake --build . --target install -- '-j${MAX_JOBS}'"
+
+# Unset path conversion guards
+unset MSYS_NO_PATHCONV
+unset MSYS2_ARG_CONV_EXCL
 
 # Copy all build artifacts to sysroot
 echo -e "${YELLOW}Copying libraries and headers to sysroot...${NC}"

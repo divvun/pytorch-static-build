@@ -280,6 +280,10 @@ if [ "$PLATFORM" = "windows" ]; then
     INSTALL_PREFIX=$(cygpath -w "${INSTALL_PREFIX}")
     NINJA_PATH=$(cygpath -w "${NINJA_PATH}")
     CMAKE_PATH=$(cygpath -w "${CMAKE_PATH}")
+
+    # Prevent path mangling when building CMAKE_ARGS
+    export MSYS_NO_PATHCONV=1
+    export MSYS2_ARG_CONV_EXCL="*"
 fi
 
 # Prepare CMake arguments
@@ -371,6 +375,9 @@ echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
 if [ "$PLATFORM" = "windows" ]; then
     # Use PowerShell for Windows to handle paths with backslashes
     pwsh.exe -Command "Set-Location '${BUILD_ROOT}'; & cmake --build . --target install -- '-j${MAX_JOBS}'"
+    # Unset path conversion guards
+    unset MSYS_NO_PATHCONV
+    unset MSYS2_ARG_CONV_EXCL
 else
     cd "${BUILD_ROOT}"
     "${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
