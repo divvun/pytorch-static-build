@@ -168,6 +168,9 @@ if [ $WITH_DEPS -eq 1 ]; then
             echo "--- :hammer_and_wrench: Building host protoc for ${HOST_LINUX_TARGET}"
             "${SCRIPT_DIR}/build-protobuf.sh" --target "${HOST_LINUX_TARGET}" "${COMMON_ARGS[@]}"
             ;;
+        *-windows-*)
+            export PATH=$PATH:/c/msys2/usr/bin
+            ;;
     esac
 
     # Build target protobuf - always build to ensure correct version
