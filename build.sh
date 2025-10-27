@@ -118,6 +118,23 @@ if [ -z "$TARGET" ]; then
     exit 1
 fi
 
+# Clean target directory if requested
+CLEAN_BUILD=1
+for arg in "${COMMON_ARGS[@]}"; do
+    if [[ "$arg" == "--no-clean" ]]; then
+        CLEAN_BUILD=0
+        break
+    fi
+done
+
+if [ $CLEAN_BUILD -eq 1 ]; then
+    TARGET_DIR="${SCRIPT_DIR}/target/${TARGET}"
+    if [ -d "${TARGET_DIR}" ]; then
+        echo -e "${YELLOW}Cleaning target directory: ${TARGET_DIR}${NC}"
+        rm -rf "${TARGET_DIR}"
+    fi
+fi
+
 # Build dependencies if requested
 if [ $WITH_DEPS -eq 1 ]; then
     echo "--- :package: Building dependencies for ${TARGET}"

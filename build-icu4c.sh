@@ -131,9 +131,9 @@ fi
 if ! command -v make &> /dev/null; then
     if [ "$PLATFORM" = "windows" ]; then
         echo -e "${YELLOW}make not found, installing with pacman...${NC}"
-        pacman -S --noconfirm mingw-w64-x86_64-make || {
+        pacman -S --noconfirm make || {
             echo -e "${RED}Error: Failed to install make${NC}"
-            echo "Try manually: pacman -S mingw-w64-x86_64-make"
+            echo "Try manually: pacman -S make"
             exit 1
         }
     else
