@@ -8,6 +8,12 @@
 
 set -e
 
+# Windows: Add MSYS2 to PATH and enable long paths
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    export PATH=$PATH:/c/msys2/usr/bin
+    git config --system core.longpaths true || true  # Don't fail if already set or no permission
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

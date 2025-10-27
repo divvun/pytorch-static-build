@@ -18,6 +18,47 @@ set -e
 
 export PATH=$PATH:/c/msys2/usr/bin
 
+# Auto-detect and add MSVC to PATH if not already present
+if ! command -v cl.exe &> /dev/null; then
+    # Common MSVC locations
+    VS_PATHS=(
+        "/c/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC"
+        "/c/Program Files/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC"
+        "/c/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC"
+        "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC"
+        "/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC"
+        "/c/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC"
+    )
+
+    MSVC_FOUND=0
+    for VS_BASE in "${VS_PATHS[@]}"; do
+        if [ -d "$VS_BASE" ]; then
+            # Find the latest version directory
+            MSVC_VERSION=$(ls -1 "$VS_BASE" 2>/dev/null | sort -V | tail -1)
+            if [ -n "$MSVC_VERSION" ]; then
+                MSVC_BIN="$VS_BASE/$MSVC_VERSION/bin/Hostx64/x64"
+                if [ -f "$MSVC_BIN/cl.exe" ]; then
+                    echo "Found MSVC at: $MSVC_BIN"
+                    export PATH="$MSVC_BIN:$PATH"
+                    export CC=cl.exe
+                    export CXX=cl.exe
+                    MSVC_FOUND=1
+                    break
+                fi
+            fi
+        fi
+    done
+
+    if [ $MSVC_FOUND -eq 0 ]; then
+        echo "Warning: Could not locate MSVC automatically"
+        echo "MSVC will be required for the build to succeed"
+        echo ""
+        echo "Please ensure you have Visual Studio 2022 or 2019 installed, or manually set PATH:"
+        echo "  export PATH=\"/c/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/<version>/bin/Hostx64/x64:\$PATH\""
+        echo ""
+    fi
+fi
+
 # Detect script location and repo root
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT="${SCRIPT_DIR}"
@@ -166,14 +207,15 @@ fi
 if ! command -v cl.exe &> /dev/null; then
     echo -e "${RED}Error: MSVC compiler (cl.exe) not found in PATH${NC}"
     echo ""
-    echo "Please ensure you have:"
-    echo "  1. Visual Studio or Visual Studio Build Tools installed"
-    echo "  2. Run this script from a MSYS2 shell with MSVC environment loaded"
-    echo "  3. Or manually add MSVC to PATH before running this script"
+    echo "Auto-detection failed. Please ensure you have:"
+    echo "  1. Visual Studio 2022 or 2019 installed (Community, Professional, Enterprise, or BuildTools)"
+    echo "  2. Or manually add MSVC to PATH before running this script"
     echo ""
-    echo "Example setup:"
-    echo "  # From MSYS2 shell:"
+    echo "Manual setup example:"
     echo "  export PATH=\"/c/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/<version>/bin/Hostx64/x64:\$PATH\""
+    echo ""
+    echo "Download Visual Studio Build Tools from:"
+    echo "  https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022"
     exit 1
 fi
 
@@ -254,6 +296,10 @@ CMAKE_ARGS+=("-DCMAKE_WARN_DEPRECATED=OFF")
 # Build configuration
 CMAKE_ARGS+=("-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}")
 CMAKE_ARGS+=("-DCMAKE_BUILD_TYPE=${BUILD_TYPE}")
+
+# Set compilers explicitly to MSVC
+CMAKE_ARGS+=("-DCMAKE_C_COMPILER=cl.exe")
+CMAKE_ARGS+=("-DCMAKE_CXX_COMPILER=cl.exe")
 
 # Set C++17 standard explicitly for consistent Abseil string_view detection
 CMAKE_ARGS+=("-DCMAKE_CXX_STANDARD=17")

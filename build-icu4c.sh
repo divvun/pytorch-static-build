@@ -10,6 +10,46 @@
 
 set -e
 
+# Windows: Auto-detect and add MSVC to PATH if needed
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    export PATH=$PATH:/c/msys2/usr/bin
+
+    if ! command -v cl.exe &> /dev/null; then
+        # Common MSVC locations
+        VS_PATHS=(
+            "/c/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC"
+            "/c/Program Files/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC"
+            "/c/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC"
+            "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC"
+            "/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC"
+            "/c/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC"
+        )
+
+        MSVC_FOUND=0
+        for VS_BASE in "${VS_PATHS[@]}"; do
+            if [ -d "$VS_BASE" ]; then
+                MSVC_VERSION=$(ls -1 "$VS_BASE" 2>/dev/null | sort -V | tail -1)
+                if [ -n "$MSVC_VERSION" ]; then
+                    MSVC_BIN="$VS_BASE/$MSVC_VERSION/bin/Hostx64/x64"
+                    if [ -f "$MSVC_BIN/cl.exe" ]; then
+                        echo "Found MSVC at: $MSVC_BIN"
+                        export PATH="$MSVC_BIN:$PATH"
+                        export CC=cl.exe
+                        export CXX=cl.exe
+                        MSVC_FOUND=1
+                        break
+                    fi
+                fi
+            fi
+        done
+
+        if [ $MSVC_FOUND -eq 0 ]; then
+            echo "Warning: Could not locate MSVC automatically"
+            echo "MSVC will be required for Windows builds"
+        fi
+    fi
+fi
+
 # Detect script location and repo root
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT="${SCRIPT_DIR}"
