@@ -427,8 +427,10 @@ echo ""
 echo -e "${YELLOW}Running CMake configuration...${NC}"
 cd "${BUILD_ROOT}"
 export MSYS_NO_PATHCONV=1
+export MSYS2_ARG_CONV_EXCL="*"
 "${CMAKE_PATH}" "${CAFFE2_ROOT}" "${CMAKE_ARGS[@]}"
 unset MSYS_NO_PATHCONV
+unset MSYS2_ARG_CONV_EXCL
 
 # Determine number of parallel jobs
 if [ -z "$MAX_JOBS" ]; then
@@ -438,8 +440,10 @@ fi
 # Build
 echo -e "${YELLOW}Building with ${MAX_JOBS} parallel jobs...${NC}"
 export MSYS_NO_PATHCONV=1
+export MSYS2_ARG_CONV_EXCL="*"
 "${CMAKE_PATH}" --build . --target install -- "-j${MAX_JOBS}"
 unset MSYS_NO_PATHCONV
+unset MSYS2_ARG_CONV_EXCL
 
 # Copy all build artifacts to sysroot
 echo -e "${YELLOW}Copying libraries and headers to sysroot...${NC}"
