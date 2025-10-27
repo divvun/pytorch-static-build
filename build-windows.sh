@@ -16,6 +16,8 @@
 
 set -e
 
+export PATH=$PATH:/c/msys2/usr/bin
+
 # Detect script location and repo root
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT="${SCRIPT_DIR}"
