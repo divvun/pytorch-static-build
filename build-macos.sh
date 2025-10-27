@@ -183,6 +183,11 @@ else
     echo "Eigen already present"
 fi
 
+# Patch CMakeLists.txt to skip universal protoc build when custom protoc is provided
+if [ -f CMakeLists.txt ]; then
+    sed -i.bak '/CMAKE_OSX_ARCHITECTURES MATCHES.*x86_64.*arm64/s/)$/ AND NOT DEFINED CAFFE2_CUSTOM_PROTOC_EXECUTABLE)/' CMakeLists.txt
+fi
+
 # Determine target triple
 if [ -n "${TARGET_OVERRIDE}" ]; then
     # Use override if provided
