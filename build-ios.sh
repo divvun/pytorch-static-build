@@ -28,7 +28,7 @@ IOS_PLATFORM="OS"  # OS (device), SIMULATOR, WATCHOS
 IOS_ARCH=""        # Empty = auto-detect based on platform
 BUILD_TYPE="MinSizeRel"  # MinSizeRel, Release, Debug, RelWithDebInfo
 CLEAN_BUILD=1
-USE_PYTORCH_METAL=1
+USE_PYTORCH_METAL=0
 USE_COREML_DELEGATE=0
 BUILD_LITE_INTERPRETER=0
 ENABLE_BITCODE=0
