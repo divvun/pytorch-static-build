@@ -107,6 +107,22 @@ if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
     }
 }
 
+# Add Windows SDK tools to PATH (rc.exe, mt.exe)
+$WindowsKitsPath = "${env:ProgramFiles(x86)}\Windows Kits\10\bin"
+if (Test-Path $WindowsKitsPath) {
+    $SDKVersion = Get-ChildItem $WindowsKitsPath |
+        Where-Object { $_.PSIsContainer -and $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } |
+        Sort-Object Name -Descending |
+        Select-Object -First 1
+    if ($SDKVersion) {
+        $SDKBin = Join-Path $WindowsKitsPath "$($SDKVersion.Name)\x64"
+        if (Test-Path $SDKBin) {
+            Write-Host "Found Windows SDK at: $SDKBin"
+            $env:PATH = "$SDKBin;$env:PATH"
+        }
+    }
+}
+
 # Check for required tools
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     Write-Host "Error: git not found" -ForegroundColor Red
