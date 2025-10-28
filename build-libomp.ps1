@@ -1,9 +1,9 @@
 #
-# build-protobuf.ps1 - Build Protocol Buffers as static library from official repository (Windows/PowerShell)
+# build-libomp.ps1 - Build LLVM OpenMP runtime as static library (PowerShell)
 #
 # Usage:
-#   .\build-protobuf.ps1 -Target x86_64-pc-windows-msvc
-#   .\build-protobuf.ps1 -Target x86_64-pc-windows-msvc -BuildType Debug
+#   .\build-libomp.ps1 -Target x86_64-pc-windows-msvc
+#   .\build-libomp.ps1 -Target x86_64-pc-windows-msvc -BuildType Debug
 #
 
 param(
@@ -28,7 +28,7 @@ $CleanBuild = -not $NoClean
 
 # Show help
 if ($Help) {
-    Write-Host "Usage: build-protobuf.ps1 -Target <triple> [options]"
+    Write-Host "Usage: build-libomp.ps1 -Target <triple> [options]"
     Write-Host ""
     Write-Host "Required:"
     Write-Host "  -Target <triple>     Target triple (e.g., x86_64-pc-windows-msvc)"
@@ -40,7 +40,7 @@ if ($Help) {
     exit 0
 }
 
-Write-Host "--- :hammer: Building Protocol Buffers (libprotobuf)"
+Write-Host "--- :fire: Building LLVM OpenMP Runtime (libomp)"
 
 # Validate target is Windows
 if ($Target -notmatch "windows") {
@@ -48,6 +48,8 @@ if ($Target -notmatch "windows") {
     Write-Host "Target: $Target" -ForegroundColor Red
     exit 1
 }
+
+Write-Host "Warning: Static OpenMP is not officially supported on Windows but we're building it anyway"
 
 # Auto-detect and add MSVC to PATH
 if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
@@ -150,52 +152,45 @@ if (Test-Path $WindowsKitsIncludePath) {
     }
 }
 
-# Debug: Print PATH
-Write-Host "PATH: $env:PATH"
-
 # Check for required tools
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     Write-Host "Error: git not found" -ForegroundColor Red
-    Write-Host "Install it from https://git-scm.com/"
     exit 1
 }
 
 if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
     Write-Host "Error: cmake not found" -ForegroundColor Red
-    Write-Host "Install it from https://cmake.org/"
     exit 1
 }
 
 if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) {
     Write-Host "Error: ninja not found" -ForegroundColor Red
-    Write-Host "Install it with: pacman -S ninja"
     exit 1
 }
 
 # Set up paths
-$ProtobufSourceDir = Join-Path $RepoRoot "protobuf"
-$BuildRoot = Join-Path $RepoRoot "target\$Target\build\protobuf"
+$LLVMProjectDir = Join-Path $RepoRoot "llvm-project"
+$BuildRoot = Join-Path $RepoRoot "target\$Target\build\openmp"
 $InstallPrefix = Join-Path $RepoRoot "target\$Target"
 
-# Clone protobuf if not already present
-if (-not (Test-Path $ProtobufSourceDir)) {
-    Write-Host "Cloning Protocol Buffers from GitHub..." -ForegroundColor Yellow
-    & git clone --depth 1 --branch main https://github.com/protocolbuffers/protobuf.git $ProtobufSourceDir
-}
-else {
-    Write-Host "Using existing Protocol Buffers source at $ProtobufSourceDir" -ForegroundColor Green
+# Clone LLVM project if not already present
+if (-not (Test-Path $LLVMProjectDir)) {
+    Write-Host "+++ :arrow_down: Cloning LLVM project (shallow clone)"
+    & git clone --depth 1 https://github.com/llvm/llvm-project.git $LLVMProjectDir
+} else {
+    Write-Host "LLVM project already exists at $LLVMProjectDir"
 }
 
-# Verify protobuf CMakeLists.txt exists
-if (-not (Test-Path "$ProtobufSourceDir\CMakeLists.txt")) {
-    Write-Host "Error: Protobuf CMakeLists.txt not found at $ProtobufSourceDir\CMakeLists.txt" -ForegroundColor Red
-    Write-Host "The protobuf clone might be incomplete or corrupted. Try removing $ProtobufSourceDir and running again."
+# Verify OpenMP runtime directory exists
+if (-not (Test-Path "$LLVMProjectDir\openmp\runtime")) {
+    Write-Host "Error: OpenMP runtime not found at $LLVMProjectDir\openmp\runtime" -ForegroundColor Red
+    Write-Host "Try deleting llvm-project\ and re-running to clone fresh"
     exit 1
 }
 
 # Clean build directory if requested
 if ($CleanBuild) {
-    Write-Host "Cleaning build directory..." -ForegroundColor Yellow
+    Write-Host "+++ :broom: Cleaning build directory"
     if (Test-Path $BuildRoot) {
         Remove-Item -Recurse -Force $BuildRoot
     }
@@ -213,28 +208,24 @@ $CMakeArgs = @(
     "-DCMAKE_MAKE_PROGRAM=$NinjaPath",
     "-DCMAKE_BUILD_TYPE=$BuildType",
     "-DCMAKE_INSTALL_PREFIX=$InstallPrefix",
+    "-DCMAKE_CXX_STANDARD=17",
     "-DCMAKE_C_COMPILER=cl.exe",
     "-DCMAKE_CXX_COMPILER=cl.exe",
-    "-DCMAKE_CXX_STANDARD=17",
-    "-Dprotobuf_BUILD_SHARED_LIBS=OFF",
-    "-Dprotobuf_FORCE_FETCH_DEPENDENCIES=ON",
-    "-DABSL_ENABLE_INSTALL=ON",
-    "-DABSL_PROPAGATE_CXX_STD=ON",
+    "-DLIBOMP_ENABLE_SHARED=OFF",
     "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
-    "-Dprotobuf_BUILD_TESTS=OFF",
-    "-Dprotobuf_BUILD_EXAMPLES=OFF",
-    "-Dprotobuf_BUILD_PROTOC_BINARIES=ON"
+    "-DOPENMP_ENABLE_TESTING=OFF",
+    "-DLIBOMP_OMPT_SUPPORT=OFF"
 )
 
 # Display build configuration
 Write-Host ""
-Write-Host "+++ :gear: Protobuf Build Configuration"
+Write-Host "+++ :gear: OpenMP Build Configuration"
 Write-Host "Target triple:      $Target"
 Write-Host "Build type:         $BuildType"
 Write-Host "Platform:           windows"
 Write-Host "C compiler:         cl.exe"
 Write-Host "C++ compiler:       cl.exe"
-Write-Host "Protobuf source:    $ProtobufSourceDir"
+Write-Host "LLVM source:        $LLVMProjectDir"
 Write-Host "Build directory:    $BuildRoot"
 Write-Host "Install prefix:     $InstallPrefix"
 Write-Host ""
@@ -243,7 +234,7 @@ Write-Host ""
 Write-Host "+++ :cmake: Running CMake configuration"
 Push-Location $BuildRoot
 try {
-    & $CMakePath $ProtobufSourceDir @CMakeArgs
+    & $CMakePath "$LLVMProjectDir\openmp" @CMakeArgs
     if ($LASTEXITCODE -ne 0) {
         throw "CMake configuration failed"
     }
@@ -268,51 +259,16 @@ finally {
     Pop-Location
 }
 
-# Copy Abseil libraries to sysroot (protobuf depends on Abseil)
-Write-Host "+++ :file_folder: Copying Abseil libraries to sysroot"
-$AbseilLibs = Get-ChildItem -Path $BuildRoot -Filter "libabsl_*.lib" -Recurse -ErrorAction SilentlyContinue
-if ($AbseilLibs) {
-    foreach ($lib in $AbseilLibs) {
-        Copy-Item $lib.FullName -Destination "$InstallPrefix\lib\" -Force
-    }
-    Write-Host "Copied $($AbseilLibs.Count) Abseil libraries"
-}
-else {
-    Write-Host "Warning: No Abseil libraries found in build directory"
-}
-
-# Copy Abseil headers if present
-$AbseilHeaderSrc = @(
-    "$BuildRoot\abseil-cpp\absl",
-    "$BuildRoot\_deps\abseil-cpp-src\absl"
-)
-foreach ($src in $AbseilHeaderSrc) {
-    if (Test-Path $src) {
-        Write-Host "Copying Abseil headers"
-        Copy-Item -Path $src -Destination "$InstallPrefix\include\" -Recurse -Force -ErrorAction SilentlyContinue
-        break
-    }
-}
-
 Write-Host ""
-Write-Host "--- :white_check_mark: Protobuf build completed successfully!"
+Write-Host "--- :white_check_mark: OpenMP build completed successfully!"
 Write-Host ""
 Write-Host "Target: $Target"
 Write-Host ""
-Write-Host "Binaries:"
-Get-ChildItem "$InstallPrefix\bin\protoc*" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $($_.FullName)" }
-Write-Host ""
 Write-Host "Library files:"
-Get-ChildItem "$InstallPrefix\lib\libproto*" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $($_.FullName)" }
-Write-Host ""
-Write-Host "Abseil libraries:"
-Get-ChildItem "$InstallPrefix\lib\libabsl_*.lib" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $($_.FullName)" }
+Get-ChildItem "$InstallPrefix\lib\*omp*" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $($_.FullName)" }
 Write-Host ""
 Write-Host "Header files:"
-if (Test-Path "$InstallPrefix\include\google\protobuf") {
-    Write-Host "  $InstallPrefix\include\google\protobuf"
-}
-if (Test-Path "$InstallPrefix\include\absl") {
-    Write-Host "  $InstallPrefix\include\absl"
-}
+Get-ChildItem "$InstallPrefix\include\*omp*" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $($_.FullName)" }
+Write-Host ""
+Write-Host "You can now link against: $InstallPrefix\lib\libomp.lib"
 Write-Host ""

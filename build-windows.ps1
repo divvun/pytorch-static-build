@@ -299,7 +299,7 @@ $CMakeArgs += "-DBUILD_BINARY=OFF"
 
 # Windows-specific features
 # Check for custom-built OpenMP
-$CustomOpenMPLib = Join-Path $InstallPrefix "lib\libomp.a"
+$CustomOpenMPLib = Join-Path $InstallPrefix "lib\libomp.lib"
 $CustomOpenMPInclude = Join-Path $InstallPrefix "include"
 if ($UseOpenMP -and (Test-Path $CustomOpenMPLib)) {
     Write-Host "Using custom-built static OpenMP from ${CustomOpenMPLib}"
@@ -331,7 +331,7 @@ $CMakeArgs += "-DUSE_PROF=OFF"
 
 # Check for custom-built Protobuf
 $CustomProtoc = Join-Path $InstallPrefix "bin\protoc.exe"
-$CustomProtobufLib = Join-Path $InstallPrefix "lib\libprotobuf.a"
+$CustomProtobufLib = Join-Path $InstallPrefix "lib\libprotobuf.lib"
 $CustomProtobufCMakeDir = Join-Path $InstallPrefix "lib\cmake\protobuf"
 if ((Test-Path $CustomProtoc) -and (Test-Path $CustomProtobufLib)) {
     Write-Host "Using custom-built static Protobuf from ${CustomProtobufLib}"
