@@ -40,7 +40,7 @@ if ($Help) {
     exit 0
 }
 
-Write-Host "Building Protocol Buffers (libprotobuf)" -ForegroundColor Green
+Write-Host "--- :hammer: Building Protocol Buffers (libprotobuf)"
 
 # Validate target is Windows
 if ($Target -notmatch "windows") {
@@ -69,6 +69,14 @@ if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
                 if (Test-Path "$MSVCBin\cl.exe") {
                     Write-Host "Found MSVC at: $MSVCBin"
                     $env:PATH = "$MSVCBin;$env:PATH"
+
+                    # Add MSVC libraries to LIB path
+                    $MSVCLibPath = Join-Path $VSBase $MSVCVersion.Name "lib\x64"
+                    if (Test-Path $MSVCLibPath) {
+                        $env:LIB = "$MSVCLibPath;$env:LIB"
+                        Write-Host "Added MSVC libraries to LIB"
+                    }
+
                     $MSVCFound = $true
                     break
                 }
@@ -195,7 +203,7 @@ $CMakeArgs = @(
 
 # Display build configuration
 Write-Host ""
-Write-Host "=== Protobuf Build Configuration ===" -ForegroundColor Green
+Write-Host "+++ :gear: Protobuf Build Configuration"
 Write-Host "Target triple:      $Target"
 Write-Host "Build type:         $BuildType"
 Write-Host "Platform:           windows"
@@ -204,11 +212,10 @@ Write-Host "C++ compiler:       cl.exe"
 Write-Host "Protobuf source:    $ProtobufSourceDir"
 Write-Host "Build directory:    $BuildRoot"
 Write-Host "Install prefix:     $InstallPrefix"
-Write-Host "======================================" -ForegroundColor Green
 Write-Host ""
 
 # Run CMake configuration
-Write-Host "Running CMake configuration..." -ForegroundColor Yellow
+Write-Host "+++ :cmake: Running CMake configuration"
 Push-Location $BuildRoot
 try {
     & $CMakePath $ProtobufSourceDir @CMakeArgs
@@ -224,7 +231,7 @@ finally {
 $MaxJobs = if ($env:MAX_JOBS) { $env:MAX_JOBS } else { $env:NUMBER_OF_PROCESSORS }
 
 # Build
-Write-Host "Building with $MaxJobs parallel jobs..." -ForegroundColor Yellow
+Write-Host "+++ :package: Building with $MaxJobs parallel jobs"
 Push-Location $BuildRoot
 try {
     & $CMakePath --build . --target install -- "-j$MaxJobs"
@@ -237,16 +244,16 @@ finally {
 }
 
 # Copy Abseil libraries to sysroot (protobuf depends on Abseil)
-Write-Host "Copying Abseil libraries to sysroot..." -ForegroundColor Yellow
+Write-Host "+++ :file_folder: Copying Abseil libraries to sysroot"
 $AbseilLibs = Get-ChildItem -Path $BuildRoot -Filter "libabsl_*.a" -Recurse -ErrorAction SilentlyContinue
 if ($AbseilLibs) {
     foreach ($lib in $AbseilLibs) {
         Copy-Item $lib.FullName -Destination "$InstallPrefix\lib\" -Force
     }
-    Write-Host "Copied $($AbseilLibs.Count) Abseil libraries" -ForegroundColor Green
+    Write-Host "Copied $($AbseilLibs.Count) Abseil libraries"
 }
 else {
-    Write-Host "Warning: No Abseil libraries found in build directory" -ForegroundColor Yellow
+    Write-Host "Warning: No Abseil libraries found in build directory"
 }
 
 # Copy Abseil headers if present
@@ -256,14 +263,14 @@ $AbseilHeaderSrc = @(
 )
 foreach ($src in $AbseilHeaderSrc) {
     if (Test-Path $src) {
-        Write-Host "Copying Abseil headers..." -ForegroundColor Yellow
+        Write-Host "Copying Abseil headers"
         Copy-Item -Path $src -Destination "$InstallPrefix\include\" -Recurse -Force -ErrorAction SilentlyContinue
         break
     }
 }
 
 Write-Host ""
-Write-Host "Protobuf build completed successfully!" -ForegroundColor Green
+Write-Host "--- :white_check_mark: Protobuf build completed successfully!"
 Write-Host ""
 Write-Host "Target: $Target"
 Write-Host ""

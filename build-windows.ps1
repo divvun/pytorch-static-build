@@ -53,7 +53,7 @@ if ($Help) {
     exit 0
 }
 
-Write-Host "Building PyTorch C++ libraries for Windows (MSVC)" -ForegroundColor Green
+Write-Host "--- :fire: Building PyTorch C++ libraries for Windows (MSVC)"
 
 # Validate target is Windows
 if ($Target -notmatch "windows") {
@@ -92,6 +92,14 @@ if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
                 if (Test-Path "$MSVCBin\cl.exe") {
                     Write-Host "Found MSVC at: $MSVCBin"
                     $env:PATH = "$MSVCBin;$env:PATH"
+
+                    # Add MSVC libraries to LIB path
+                    $MSVCLibPath = Join-Path $VSBase $MSVCVersion.Name "lib\x64"
+                    if (Test-Path $MSVCLibPath) {
+                        $env:LIB = "$MSVCLibPath;$env:LIB"
+                        Write-Host "Added MSVC libraries to LIB"
+                    }
+
                     $MSVCFound = $true
                     break
                 }
@@ -176,7 +184,7 @@ Set-Location $PyTorchRoot
 
 # Get Python executable from uv
 if (-not (Test-Path ".venv")) {
-    Write-Host "No .venv found, creating one with uv..." -ForegroundColor Yellow
+    Write-Host "+++ :python: Creating Python virtual environment with uv"
     & uv venv
 }
 
@@ -186,19 +194,19 @@ if (-not (Test-Path $PythonExe)) {
     exit 1
 }
 
-Write-Host "Using Python: ${PythonExe}" -ForegroundColor Green
+Write-Host "Using Python: ${PythonExe}"
 
 # Get tool paths
 $NinjaPath = (Get-Command ninja).Source
 $CMakePath = (Get-Command cmake).Source
 
 # Install minimal Python dependencies
-Write-Host "Installing Python dependencies with uv..." -ForegroundColor Yellow
+Write-Host "+++ :package: Installing Python dependencies with uv"
 & uv pip install pyyaml setuptools typing-extensions 2>$null
 
 # Fetch optional dependencies
 if (-not (Test-Path "third_party\eigen\CMakeLists.txt")) {
-    Write-Host "Fetching optional Eigen dependency..." -ForegroundColor Yellow
+    Write-Host "+++ :arrow_down: Fetching optional Eigen dependency"
     & $PythonExe tools\optional_submodules.py checkout_eigen
 }
 
@@ -208,7 +216,7 @@ $InstallPrefix = Join-Path $RepoRoot "target\$Target"
 $BuildRoot = Join-Path $InstallPrefix "build\pytorch"
 
 if ($CleanBuild) {
-    Write-Host "Cleaning build directory..." -ForegroundColor Yellow
+    Write-Host "+++ :broom: Cleaning build directory"
     if (Test-Path $BuildRoot) {
         Remove-Item -Recurse -Force $BuildRoot
     }
@@ -269,7 +277,7 @@ $CMakeArgs += "-DBUILD_BINARY=OFF"
 $CustomOpenMPLib = Join-Path $InstallPrefix "lib\libomp.a"
 $CustomOpenMPInclude = Join-Path $InstallPrefix "include"
 if ($UseOpenMP -and (Test-Path $CustomOpenMPLib)) {
-    Write-Host "Using custom-built static OpenMP from ${CustomOpenMPLib}" -ForegroundColor Green
+    Write-Host "Using custom-built static OpenMP from ${CustomOpenMPLib}"
     $CMakeArgs += "-DUSE_OPENMP=ON"
     $CMakeArgs += "-DOpenMP_C_FLAGS=-Xclang -fopenmp -I${CustomOpenMPInclude}"
     $CMakeArgs += "-DOpenMP_CXX_FLAGS=-Xclang -fopenmp -I${CustomOpenMPInclude}"
@@ -301,7 +309,7 @@ $CustomProtoc = Join-Path $InstallPrefix "bin\protoc.exe"
 $CustomProtobufLib = Join-Path $InstallPrefix "lib\libprotobuf.a"
 $CustomProtobufCMakeDir = Join-Path $InstallPrefix "lib\cmake\protobuf"
 if ((Test-Path $CustomProtoc) -and (Test-Path $CustomProtobufLib)) {
-    Write-Host "Using custom-built static Protobuf from ${CustomProtobufLib}" -ForegroundColor Green
+    Write-Host "Using custom-built static Protobuf from ${CustomProtobufLib}"
     $CMakeArgs += "-DBUILD_CUSTOM_PROTOBUF=OFF"
     $CMakeArgs += "-DCAFFE2_CUSTOM_PROTOC_EXECUTABLE=${CustomProtoc}"
     $CMakeArgs += "-DProtobuf_PROTOC_EXECUTABLE=${CustomProtoc}"
@@ -317,7 +325,7 @@ $CMakeArgs += "-DUSE_MIMALLOC=ON"
 
 # Display build configuration
 Write-Host ""
-Write-Host "=== Windows Build Configuration ===" -ForegroundColor Green
+Write-Host "+++ :gear: Windows Build Configuration"
 Write-Host "Target triple:      $Target"
 Write-Host "Build type:         $BuildType"
 Write-Host "Library type:       $(if ($BuildSharedLibs) { 'shared' } else { 'static' })"
@@ -336,11 +344,10 @@ if (Test-Path $CustomProtobufLib) {
 }
 Write-Host "BUILD_LITE:         ${BuildLiteInterpreter}"
 Write-Host "MSVC Static RT:     $(if (-not $BuildSharedLibs) { 'ON' } else { 'OFF' })"
-Write-Host "====================================" -ForegroundColor Green
 Write-Host ""
 
 # Run CMake configuration
-Write-Host "Running CMake configuration..." -ForegroundColor Yellow
+Write-Host "+++ :cmake: Running CMake configuration"
 Push-Location $BuildRoot
 try {
     & $CMakePath $Caffe2Root @CMakeArgs
@@ -356,7 +363,7 @@ finally {
 $MaxJobs = if ($env:MAX_JOBS) { $env:MAX_JOBS } else { $env:NUMBER_OF_PROCESSORS }
 
 # Build
-Write-Host "Building with $MaxJobs parallel jobs..." -ForegroundColor Yellow
+Write-Host "+++ :package: Building with $MaxJobs parallel jobs"
 Push-Location $BuildRoot
 try {
     & $CMakePath --build . --target install -- "-j$MaxJobs"
@@ -369,7 +376,7 @@ finally {
 }
 
 # Copy all build artifacts to sysroot
-Write-Host "Copying libraries and headers to sysroot..." -ForegroundColor Yellow
+Write-Host "+++ :file_folder: Copying libraries and headers to sysroot"
 if (Test-Path "$BuildRoot\lib") {
     Copy-Item -Path "$BuildRoot\lib\*" -Destination "$InstallPrefix\lib\" -Recurse -Force -ErrorAction SilentlyContinue
 }
@@ -378,7 +385,7 @@ if (Test-Path "$BuildRoot\include") {
 }
 
 Write-Host ""
-Write-Host "Windows build completed successfully!" -ForegroundColor Green
+Write-Host "--- :white_check_mark: Windows build completed successfully!"
 Write-Host ""
 Write-Host "Target: $Target"
 Write-Host ""
