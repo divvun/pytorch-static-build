@@ -100,6 +100,23 @@ if (Test-Path $WindowsKitsPath) {
     }
 }
 
+# Add Windows SDK libraries to LIB path
+$WindowsKitsLibPath = "${env:ProgramFiles(x86)}\Windows Kits\10\Lib"
+if (Test-Path $WindowsKitsLibPath) {
+    $SDKVersion = Get-ChildItem $WindowsKitsLibPath |
+        Where-Object { $_.PSIsContainer -and $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } |
+        Sort-Object Name -Descending |
+        Select-Object -First 1
+    if ($SDKVersion) {
+        $SDKLibUm = Join-Path $WindowsKitsLibPath "$($SDKVersion.Name)\um\x64"
+        $SDKLibUcrt = Join-Path $WindowsKitsLibPath "$($SDKVersion.Name)\ucrt\x64"
+        if ((Test-Path $SDKLibUm) -and (Test-Path $SDKLibUcrt)) {
+            $env:LIB = "$SDKLibUm;$SDKLibUcrt;$env:LIB"
+            Write-Host "Added Windows SDK libraries to LIB"
+        }
+    }
+}
+
 # Debug: Print PATH
 Write-Host "PATH: $env:PATH"
 
