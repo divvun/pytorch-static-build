@@ -152,6 +152,24 @@ if (Test-Path $WindowsKitsIncludePath) {
     }
 }
 
+# Check for uv and set up Python environment
+if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
+    Write-Host "Error: uv is not installed" -ForegroundColor Red
+    Write-Host "Install it with: irm https://astral.sh/uv/install.ps1 | iex"
+    exit 1
+}
+
+if (-not (Test-Path "$RepoRoot\.venv")) {
+    Write-Host "+++ :python: Creating Python virtual environment with uv"
+    & uv venv
+}
+
+Write-Host "+++ :package: Installing Python dependencies with uv"
+& uv pip install pyyaml setuptools typing-extensions 2>$null
+
+Write-Host "+++ :snake: Activating Python virtual environment"
+& "$RepoRoot\.venv\Scripts\Activate.ps1"
+
 # Check for required tools
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     Write-Host "Error: git not found" -ForegroundColor Red

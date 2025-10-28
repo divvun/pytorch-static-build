@@ -229,6 +229,10 @@ $CMakePath = (Get-Command cmake).Source
 Write-Host "+++ :package: Installing Python dependencies with uv"
 & uv pip install pyyaml setuptools typing-extensions 2>$null
 
+# Activate the virtual environment
+Write-Host "+++ :snake: Activating Python virtual environment"
+& ".\.venv\Scripts\Activate.ps1"
+
 # Fetch optional dependencies
 if (-not (Test-Path "third_party\eigen\CMakeLists.txt")) {
     Write-Host "+++ :arrow_down: Fetching optional Eigen dependency"
