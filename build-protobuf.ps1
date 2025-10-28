@@ -77,6 +77,13 @@ if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
                         Write-Host "Added MSVC libraries to LIB"
                     }
 
+                    # Add MSVC include paths
+                    $MSVCIncludePath = Join-Path $VSBase $MSVCVersion.Name "include"
+                    if (Test-Path $MSVCIncludePath) {
+                        $env:INCLUDE = "$MSVCIncludePath;$env:INCLUDE"
+                        Write-Host "Added MSVC includes to INCLUDE"
+                    }
+
                     $MSVCFound = $true
                     break
                 }
@@ -121,6 +128,24 @@ if (Test-Path $WindowsKitsLibPath) {
         if ((Test-Path $SDKLibUm) -and (Test-Path $SDKLibUcrt)) {
             $env:LIB = "$SDKLibUm;$SDKLibUcrt;$env:LIB"
             Write-Host "Added Windows SDK libraries to LIB"
+        }
+    }
+}
+
+# Add Windows SDK include paths
+$WindowsKitsIncludePath = "${env:ProgramFiles(x86)}\Windows Kits\10\Include"
+if (Test-Path $WindowsKitsIncludePath) {
+    $SDKVersion = Get-ChildItem $WindowsKitsIncludePath |
+        Where-Object { $_.PSIsContainer -and $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } |
+        Sort-Object Name -Descending |
+        Select-Object -First 1
+    if ($SDKVersion) {
+        $SDKIncUcrt = Join-Path $WindowsKitsIncludePath "$($SDKVersion.Name)\ucrt"
+        $SDKIncShared = Join-Path $WindowsKitsIncludePath "$($SDKVersion.Name)\shared"
+        $SDKIncUm = Join-Path $WindowsKitsIncludePath "$($SDKVersion.Name)\um"
+        if (Test-Path $SDKIncUcrt) {
+            $env:INCLUDE = "$SDKIncUcrt;$SDKIncShared;$SDKIncUm;$env:INCLUDE"
+            Write-Host "Added Windows SDK includes to INCLUDE"
         }
     }
 }
