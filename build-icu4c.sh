@@ -197,7 +197,7 @@ fi
 # Set up paths
 ICU_SOURCE_DIR="${REPO_ROOT}/icu/icu4c/source"
 BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/icu"
-INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}"
+INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/icu4c"
 
 # Clone ICU if not already present
 if [ ! -d "${REPO_ROOT}/icu" ]; then

@@ -238,8 +238,8 @@ fi
 
 # Set up build and install directories
 CAFFE2_ROOT="$(pwd)"
-INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}"
-BUILD_ROOT="${INSTALL_PREFIX}/build/pytorch"
+INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/pytorch"
+BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/pytorch"
 
 if [ $CLEAN_BUILD -eq 1 ]; then
     echo -e "${YELLOW}Cleaning build directory...${NC}"
@@ -253,7 +253,9 @@ CMAKE_ARGS=()
 
 # Python configuration
 PYTHON_PREFIX_PATH=$($PYTHON -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
-CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${PYTHON_PREFIX_PATH}")
+# Add all dependency prefixes to CMAKE_PREFIX_PATH
+PROTOBUF_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/protobuf"
+CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${PROTOBUF_PREFIX};${PYTHON_PREFIX_PATH}")
 CMAKE_ARGS+=("-DPython_EXECUTABLE=$($PYTHON -c 'import sys; print(sys.executable)')")
 
 # Use Ninja
@@ -352,13 +354,13 @@ CMAKE_ARGS+=("-DCMAKE_USE_PTHREADS_INIT=1")
 
 # Protobuf - iOS needs host protoc for cross-compilation
 # Check for custom-built Protobuf (should use macOS host protoc)
-HOST_PROTOC="${REPO_ROOT}/target/aarch64-apple-darwin/bin/protoc"
+HOST_PROTOC="${REPO_ROOT}/target/aarch64-apple-darwin/protobuf/bin/protoc"
 if [ ! -f "${HOST_PROTOC}" ]; then
-    HOST_PROTOC="${REPO_ROOT}/target/x86_64-apple-darwin/bin/protoc"
+    HOST_PROTOC="${REPO_ROOT}/target/x86_64-apple-darwin/protobuf/bin/protoc"
 fi
 
-CUSTOM_PROTOBUF_LIB="${INSTALL_PREFIX}/lib/libprotobuf.a"
-CUSTOM_PROTOBUF_CMAKE_DIR="${INSTALL_PREFIX}/lib/cmake/protobuf"
+CUSTOM_PROTOBUF_LIB="${PROTOBUF_PREFIX}/lib/libprotobuf.a"
+CUSTOM_PROTOBUF_CMAKE_DIR="${PROTOBUF_PREFIX}/lib/cmake/protobuf"
 
 if [ -f "${HOST_PROTOC}" ] && [ -f "${CUSTOM_PROTOBUF_LIB}" ]; then
     echo -e "${GREEN}Using custom-built static Protobuf with host protoc${NC}"

@@ -235,7 +235,7 @@ fi
 # Set up paths
 PROTOBUF_SOURCE_DIR="${REPO_ROOT}/protobuf"
 BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/protobuf"
-INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}"
+INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/protobuf"
 
 # Clone protobuf if not already present
 if [ ! -d "${PROTOBUF_SOURCE_DIR}" ]; then

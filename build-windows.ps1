@@ -241,8 +241,8 @@ if (-not (Test-Path "third_party\eigen\CMakeLists.txt")) {
 
 # Set up build and install directories
 $Caffe2Root = Get-Location
-$InstallPrefix = Join-Path $RepoRoot "target\$Target"
-$BuildRoot = Join-Path $InstallPrefix "build\pytorch"
+$InstallPrefix = Join-Path $RepoRoot "target\$Target\pytorch"
+$BuildRoot = Join-Path $RepoRoot "target\$Target\build\pytorch"
 
 if ($CleanBuild) {
     Write-Host "+++ :broom: Cleaning build directory"
@@ -257,9 +257,13 @@ New-Item -ItemType Directory -Force -Path $BuildRoot | Out-Null
 $PythonPrefixPath = & $PythonExe -c 'import sysconfig; print(sysconfig.get_path("purelib"))' | ForEach-Object { $_ -replace '\\', '/' }
 $PythonExecutable = & $PythonExe -c 'import sys; print(sys.executable)' | ForEach-Object { $_ -replace '\\', '/' }
 
+# Add all dependency prefixes to CMAKE_PREFIX_PATH
+$LibompPrefix = Join-Path $RepoRoot "target\$Target\libomp"
+$ProtobufPrefix = Join-Path $RepoRoot "target\$Target\protobuf"
+
 # Prepare CMake arguments
 $CMakeArgs = @(
-    "-DCMAKE_PREFIX_PATH=${InstallPrefix};${PythonPrefixPath}",
+    "-DCMAKE_PREFIX_PATH=${InstallPrefix};${LibompPrefix};${ProtobufPrefix};${PythonPrefixPath}",
     "-DPython_EXECUTABLE=${PythonExecutable}",
     "-GNinja",
     "-DCMAKE_MAKE_PROGRAM=$NinjaPath",
@@ -303,8 +307,8 @@ $CMakeArgs += "-DBUILD_BINARY=OFF"
 
 # Windows-specific features
 # Check for custom-built OpenMP
-$CustomOpenMPLib = Join-Path $InstallPrefix "lib\libomp.lib"
-$CustomOpenMPInclude = Join-Path $InstallPrefix "include"
+$CustomOpenMPLib = Join-Path $LibompPrefix "lib\libomp.lib"
+$CustomOpenMPInclude = Join-Path $LibompPrefix "include"
 if ($UseOpenMP -and (Test-Path $CustomOpenMPLib)) {
     Write-Host "Using custom-built static OpenMP from ${CustomOpenMPLib}"
     $CMakeArgs += "-DUSE_OPENMP=ON"
@@ -334,9 +338,9 @@ $CMakeArgs += "-DUSE_FBGEMM=OFF"
 $CMakeArgs += "-DUSE_PROF=OFF"
 
 # Check for custom-built Protobuf
-$CustomProtoc = Join-Path $InstallPrefix "bin\protoc.exe"
-$CustomProtobufLib = Join-Path $InstallPrefix "lib\libprotobuf.lib"
-$CustomProtobufCMakeDir = Join-Path $InstallPrefix "lib\cmake\protobuf"
+$CustomProtoc = Join-Path $ProtobufPrefix "bin\protoc.exe"
+$CustomProtobufLib = Join-Path $ProtobufPrefix "lib\libprotobuf.lib"
+$CustomProtobufCMakeDir = Join-Path $ProtobufPrefix "lib\cmake\protobuf"
 if ((Test-Path $CustomProtoc) -and (Test-Path $CustomProtobufLib)) {
     Write-Host "Using custom-built static Protobuf from ${CustomProtobufLib}"
     $CMakeArgs += "-DBUILD_CUSTOM_PROTOBUF=OFF"

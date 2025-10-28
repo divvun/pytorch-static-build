@@ -235,8 +235,8 @@ fi
 
 # Set up build and install directories
 CAFFE2_ROOT="$(pwd)"
-INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}"
-BUILD_ROOT="${INSTALL_PREFIX}/build/pytorch"
+INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/pytorch"
+BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/pytorch"
 
 if [ $CLEAN_BUILD -eq 1 ]; then
     echo -e "${YELLOW}Cleaning build directory...${NC}"
@@ -254,7 +254,10 @@ CMAKE_ARGS=()
 
 # Python configuration (needed for CMake generation)
 PYTHON_PREFIX_PATH=$($PYTHON -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
-CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${PYTHON_PREFIX_PATH}")
+# Add all dependency prefixes to CMAKE_PREFIX_PATH
+LIBOMP_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/libomp"
+PROTOBUF_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/protobuf"
+CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${LIBOMP_PREFIX};${PROTOBUF_PREFIX};${PYTHON_PREFIX_PATH}")
 CMAKE_ARGS+=("-DPython_EXECUTABLE=$($PYTHON -c 'import sys; print(sys.executable)')")
 
 # Use Ninja
@@ -293,8 +296,8 @@ CMAKE_ARGS+=("-DBUILD_BINARY=OFF")
 
 # Linux-specific features
 # Check for custom-built OpenMP
-CUSTOM_OPENMP_LIB="${INSTALL_PREFIX}/lib/libomp.a"
-CUSTOM_OPENMP_INCLUDE="${INSTALL_PREFIX}/include"
+CUSTOM_OPENMP_LIB="${LIBOMP_PREFIX}/lib/libomp.a"
+CUSTOM_OPENMP_INCLUDE="${LIBOMP_PREFIX}/include"
 if [ $USE_OPENMP -eq 1 ] && [ -f "${CUSTOM_OPENMP_LIB}" ]; then
     echo -e "${GREEN}Using custom-built static OpenMP from ${CUSTOM_OPENMP_LIB}${NC}"
     CMAKE_ARGS+=("-DUSE_OPENMP=ON")
@@ -332,15 +335,15 @@ CMAKE_ARGS+=("-DUSE_PROF=OFF")
 # - protoc executable from HOST target (runs during build)
 # - protobuf libraries from TARGET (links into binary)
 if [ $IS_CROSS_COMPILE -eq 1 ]; then
-    HOST_INSTALL_PREFIX="${REPO_ROOT}/target/${HOST_TRIPLE}"
-    CUSTOM_PROTOC="${HOST_INSTALL_PREFIX}/bin/protoc"
-    echo -e "${YELLOW}Cross-compilation: Looking for host protoc in ${HOST_INSTALL_PREFIX}${NC}"
+    HOST_PROTOBUF_PREFIX="${REPO_ROOT}/target/${HOST_TRIPLE}/protobuf"
+    CUSTOM_PROTOC="${HOST_PROTOBUF_PREFIX}/bin/protoc"
+    echo -e "${YELLOW}Cross-compilation: Looking for host protoc in ${HOST_PROTOBUF_PREFIX}${NC}"
 else
-    CUSTOM_PROTOC="${INSTALL_PREFIX}/bin/protoc"
+    CUSTOM_PROTOC="${PROTOBUF_PREFIX}/bin/protoc"
 fi
 
-CUSTOM_PROTOBUF_LIB="${INSTALL_PREFIX}/lib/libprotobuf.a"
-CUSTOM_PROTOBUF_CMAKE_DIR="${INSTALL_PREFIX}/lib/cmake/protobuf"
+CUSTOM_PROTOBUF_LIB="${PROTOBUF_PREFIX}/lib/libprotobuf.a"
+CUSTOM_PROTOBUF_CMAKE_DIR="${PROTOBUF_PREFIX}/lib/cmake/protobuf"
 
 # Verify protoc executable exists
 if [ ! -f "${CUSTOM_PROTOC}" ]; then

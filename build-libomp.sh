@@ -216,7 +216,7 @@ fi
 # Set up paths
 LLVM_PROJECT_DIR="${REPO_ROOT}/llvm-project"
 BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/openmp"
-INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}"
+INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/libomp"
 
 # Clone LLVM project if not already present
 if [ ! -d "${LLVM_PROJECT_DIR}" ]; then

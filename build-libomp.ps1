@@ -189,7 +189,7 @@ if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) {
 # Set up paths
 $LLVMProjectDir = Join-Path $RepoRoot "llvm-project"
 $BuildRoot = Join-Path $RepoRoot "target\$Target\build\openmp"
-$InstallPrefix = Join-Path $RepoRoot "target\$Target"
+$InstallPrefix = Join-Path $RepoRoot "target\$Target\libomp"
 
 # Clone LLVM project if not already present
 if (-not (Test-Path $LLVMProjectDir)) {

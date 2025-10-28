@@ -193,7 +193,7 @@ if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) {
 # Set up paths
 $ProtobufSourceDir = Join-Path $RepoRoot "protobuf"
 $BuildRoot = Join-Path $RepoRoot "target\$Target\build\protobuf"
-$InstallPrefix = Join-Path $RepoRoot "target\$Target"
+$InstallPrefix = Join-Path $RepoRoot "target\$Target\protobuf"
 
 # Clone protobuf if not already present
 if (-not (Test-Path $ProtobufSourceDir)) {
