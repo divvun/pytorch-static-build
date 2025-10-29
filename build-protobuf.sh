@@ -237,20 +237,13 @@ PROTOBUF_SOURCE_DIR="${REPO_ROOT}/protobuf"
 BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/protobuf"
 INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/protobuf"
 
-# Clone protobuf if not already present
-if [ ! -d "${PROTOBUF_SOURCE_DIR}" ]; then
-    echo -e "${YELLOW}Cloning Protocol Buffers from GitHub (tag v33.0)...${NC}"
-    git clone --depth 1 --branch v33.0 https://github.com/protocolbuffers/protobuf.git "${PROTOBUF_SOURCE_DIR}"
-else
-    echo -e "${GREEN}Using existing Protocol Buffers source at ${PROTOBUF_SOURCE_DIR}${NC}"
+# Clone protobuf (remove existing directory first)
+if [ -d "${PROTOBUF_SOURCE_DIR}" ]; then
+    echo -e "${YELLOW}Removing existing protobuf directory...${NC}"
+    rm -rf "${PROTOBUF_SOURCE_DIR}"
 fi
-
-# Verify protobuf CMakeLists.txt exists
-if [ ! -f "${PROTOBUF_SOURCE_DIR}/CMakeLists.txt" ]; then
-    echo -e "${RED}Error: Protobuf CMakeLists.txt not found at ${PROTOBUF_SOURCE_DIR}/CMakeLists.txt${NC}"
-    echo "The protobuf clone might be incomplete or corrupted. Try removing ${PROTOBUF_SOURCE_DIR} and running again."
-    exit 1
-fi
+echo -e "${YELLOW}Cloning Protocol Buffers from GitHub (tag v33.0)...${NC}"
+git clone --depth 1 --branch v33.0 https://github.com/protocolbuffers/protobuf.git "${PROTOBUF_SOURCE_DIR}"
 
 # Clean build directory if requested
 if [ $CLEAN_BUILD -eq 1 ]; then

@@ -232,20 +232,13 @@ ICU_SOURCE_DIR="${REPO_ROOT}/icu/icu4c/source"
 BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/icu"
 INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/icu4c"
 
-# Clone ICU if not already present
-if [ ! -d "${REPO_ROOT}/icu" ]; then
-    echo -e "${YELLOW}Cloning ICU from GitHub (tag release-77-1)...${NC}"
-    git clone --depth 1 --branch release-77-1 https://github.com/unicode-org/icu.git "${REPO_ROOT}/icu"
-else
-    echo -e "${GREEN}Using existing ICU source at ${REPO_ROOT}/icu${NC}"
+# Clone ICU (remove existing directory first)
+if [ -d "${REPO_ROOT}/icu" ]; then
+    echo -e "${YELLOW}Removing existing ICU directory...${NC}"
+    rm -rf "${REPO_ROOT}/icu"
 fi
-
-# Verify ICU source directory exists
-if [ ! -f "${ICU_SOURCE_DIR}/configure" ]; then
-    echo -e "${RED}Error: ICU configure script not found at ${ICU_SOURCE_DIR}/configure${NC}"
-    echo "The ICU clone might be incomplete or corrupted. Try removing ${REPO_ROOT}/icu and running again."
-    exit 1
-fi
+echo -e "${YELLOW}Cloning ICU from GitHub (tag release-77-1)...${NC}"
+git clone --depth 1 --branch release-77-1 https://github.com/unicode-org/icu.git "${REPO_ROOT}/icu"
 
 # Clean build directory if requested
 if [ $CLEAN_BUILD -eq 1 ]; then

@@ -218,20 +218,13 @@ LLVM_PROJECT_DIR="${REPO_ROOT}/llvm-project"
 BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/openmp"
 INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/libomp"
 
-# Clone LLVM project if not already present
-if [ ! -d "${LLVM_PROJECT_DIR}" ]; then
-    echo -e "${YELLOW}Cloning LLVM project (tag llvmorg-21.1.4)...${NC}"
-    git clone --depth 1 --branch llvmorg-21.1.4 https://github.com/llvm/llvm-project.git "${LLVM_PROJECT_DIR}"
-else
-    echo -e "${GREEN}LLVM project already exists at ${LLVM_PROJECT_DIR}${NC}"
+# Clone LLVM project (remove existing directory first)
+if [ -d "${LLVM_PROJECT_DIR}" ]; then
+    echo -e "${YELLOW}Removing existing LLVM project directory...${NC}"
+    rm -rf "${LLVM_PROJECT_DIR}"
 fi
-
-# Verify OpenMP runtime directory exists
-if [ ! -d "${LLVM_PROJECT_DIR}/openmp/runtime" ]; then
-    echo -e "${RED}Error: OpenMP runtime not found at ${LLVM_PROJECT_DIR}/openmp/runtime${NC}"
-    echo "Try deleting llvm-project/ and re-running to clone fresh"
-    exit 1
-fi
+echo -e "${YELLOW}Cloning LLVM project (tag llvmorg-21.1.4)...${NC}"
+git clone --depth 1 --branch llvmorg-21.1.4 https://github.com/llvm/llvm-project.git "${LLVM_PROJECT_DIR}"
 
 # Clean build directory if requested
 if [ $CLEAN_BUILD -eq 1 ]; then
