@@ -10,6 +10,10 @@
 
 set -e
 
+# Prevent MSYS2 from converting Windows paths in these variables
+export MSYS2_ARG_CONV_EXCL="*"
+export MSYS2_ENV_CONV_EXCL="LIB;INCLUDE"
+
 # Add MSYS2 to PATH if present
 if [ -d "/c/msys2/usr/bin" ]; then
     export PATH=/c/msys2/usr/bin:$PATH
@@ -118,7 +122,7 @@ case "$TARGET_TRIPLE" in
         ;;
     *-windows-*)
         PLATFORM="windows"
-        ICU_PLATFORM="Cygwin/MSVC"
+        ICU_PLATFORM="MSYS/MSVC"
         ;;
     *)
         echo -e "${RED}Error: Unsupported target triple: $TARGET_TRIPLE${NC}"
@@ -151,6 +155,15 @@ if [ "$PLATFORM" = "windows" ]; then
                         export PATH="$MSVC_BIN:$PATH"
                         export CC=cl.exe
                         export CXX=cl.exe
+
+                        # Add MSVC libraries and includes (convert to Windows paths)
+                        MSVC_LIB_PATH=$(cygpath -w "$VS_BASE/$MSVC_VERSION/lib/x64")
+                        MSVC_INCLUDE_PATH=$(cygpath -w "$VS_BASE/$MSVC_VERSION/include")
+                        export LIB="$MSVC_LIB_PATH"
+                        export INCLUDE="$MSVC_INCLUDE_PATH"
+                        echo "Added MSVC libraries to LIB"
+                        echo "Added MSVC includes to INCLUDE"
+
                         MSVC_FOUND=1
                         break
                     fi
@@ -168,6 +181,26 @@ if [ "$PLATFORM" = "windows" ]; then
             echo "Download Visual Studio Build Tools from:"
             echo "  https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022"
             exit 1
+        fi
+    fi
+
+    # Windows: Add Windows SDK to LIB and INCLUDE
+    SDK_BASE="/c/Program Files (x86)/Windows Kits/10"
+    if [ -d "$SDK_BASE/Include" ]; then
+        # Find latest SDK version
+        SDK_VERSION=$(ls -1 "$SDK_BASE/Include" 2>/dev/null | grep -E '^\d+\.' | sort -V | tail -1)
+        if [ -n "$SDK_VERSION" ]; then
+            # Convert to Windows-style paths using cygpath
+            SDK_INCLUDE_UCRT=$(cygpath -w "$SDK_BASE/Include/$SDK_VERSION/ucrt")
+            SDK_INCLUDE_UM=$(cygpath -w "$SDK_BASE/Include/$SDK_VERSION/um")
+            SDK_INCLUDE_SHARED=$(cygpath -w "$SDK_BASE/Include/$SDK_VERSION/shared")
+            SDK_LIB_UCRT=$(cygpath -w "$SDK_BASE/Lib/$SDK_VERSION/ucrt/x64")
+            SDK_LIB_UM=$(cygpath -w "$SDK_BASE/Lib/$SDK_VERSION/um/x64")
+
+            export INCLUDE="$SDK_INCLUDE_UCRT;$SDK_INCLUDE_UM;$SDK_INCLUDE_SHARED;$INCLUDE"
+            export LIB="$SDK_LIB_UCRT;$SDK_LIB_UM;$LIB"
+
+            echo "Added Windows SDK $SDK_VERSION to environment"
         fi
     fi
 fi
