@@ -233,11 +233,15 @@ try {
     $Platform = "x64"
     $SkipUWP = "true"
 
+    Push-Location .\allinone
+
     & msbuild stubdata\stubdata.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
     & msbuild common\common.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
     & msbuild i18n\i18n.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
     & msbuild io\io.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
     
+    Pop-Location
+
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Error: MSBuild failed with exit code $LASTEXITCODE" -ForegroundColor Red
         exit 1
