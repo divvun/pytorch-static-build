@@ -7,8 +7,7 @@ Write-Host "Installing ICU with vcpkg..."
 vcpkg install icu:x64-windows-static
 
 Write-Host "Copying ICU files..."
-$VcpkgRoot = vcpkg.exe --vcpkg-root 2>&1
-$VcpkgInstalled = Join-Path $VcpkgRoot "packages\icu_x64-windows-static"
+$VcpkgInstalled = Join-Path $env:VCPKG_ROOT "packages\icu_x64-windows-static"
 
 New-Item -ItemType Directory -Force -Path "$OutputDir\lib" | Out-Null
 New-Item -ItemType Directory -Force -Path "$OutputDir\include" | Out-Null
