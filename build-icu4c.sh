@@ -236,7 +236,7 @@ INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/icu4c"
 echo -e "${YELLOW}Removing existing ICU directory (if any)...${NC}"
 rm -rf "${REPO_ROOT}/icu"
 echo -e "${YELLOW}Cloning ICU from GitHub (tag release-77-1)...${NC}"
-git clone --depth 1 --branch release-77-1 https://github.com/unicode-org/icu.git "${REPO_ROOT}/icu"
+git clone --depth 1 --branch release-77-1 https://github.com/unicode-org/icu.git "./icu"
 
 # Clean build directory if requested
 if [ $CLEAN_BUILD -eq 1 ]; then
