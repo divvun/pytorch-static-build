@@ -124,11 +124,37 @@ foreach ($SDKBase in $SDKPaths) {
     }
 }
 
-# Check for MSBuild
+# Auto-detect and add MSBuild to PATH
 if (-not (Get-Command msbuild.exe -ErrorAction SilentlyContinue)) {
-    Write-Host "Error: msbuild.exe not found in PATH" -ForegroundColor Red
-    Write-Host "Please ensure Visual Studio Build Tools are installed and MSBuild is in PATH"
-    exit 1
+    $MSBuildPaths = @(
+        "${env:ProgramFiles}\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin",
+        "${env:ProgramFiles}\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin",
+        "${env:ProgramFiles}\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin",
+        "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin",
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin",
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin",
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin",
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin",
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin",
+        "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin"
+    )
+
+    $MSBuildFound = $false
+    foreach ($MSBuildPath in $MSBuildPaths) {
+        if (Test-Path "$MSBuildPath\msbuild.exe") {
+            Write-Host "Found MSBuild at: $MSBuildPath"
+            $env:PATH = "$MSBuildPath;$env:PATH"
+            $MSBuildFound = $true
+            break
+        }
+    }
+
+    if (-not $MSBuildFound) {
+        Write-Host "Error: Could not locate MSBuild automatically" -ForegroundColor Red
+        Write-Host ""
+        Write-Host "Please ensure you have Visual Studio 2022 or 2019 installed with MSBuild"
+        exit 1
+    }
 }
 
 # Set up paths
