@@ -197,8 +197,8 @@ $InstallPrefix = Join-Path $RepoRoot "target\$Target\protobuf"
 
 # Clone protobuf if not already present
 if (-not (Test-Path $ProtobufSourceDir)) {
-    Write-Host "Cloning Protocol Buffers from GitHub..." -ForegroundColor Yellow
-    & git clone --depth 1 --branch main https://github.com/protocolbuffers/protobuf.git $ProtobufSourceDir
+    Write-Host "Cloning Protocol Buffers from GitHub (tag v33.0)..." -ForegroundColor Yellow
+    & git clone --depth 1 --branch v33.0 https://github.com/protocolbuffers/protobuf.git $ProtobufSourceDir
 }
 else {
     Write-Host "Using existing Protocol Buffers source at $ProtobufSourceDir" -ForegroundColor Green

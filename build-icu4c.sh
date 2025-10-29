@@ -201,8 +201,8 @@ INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/icu4c"
 
 # Clone ICU if not already present
 if [ ! -d "${REPO_ROOT}/icu" ]; then
-    echo -e "${YELLOW}Cloning ICU from GitHub...${NC}"
-    git clone --depth 1 https://github.com/unicode-org/icu.git "${REPO_ROOT}/icu"
+    echo -e "${YELLOW}Cloning ICU from GitHub (tag release-77-1)...${NC}"
+    git clone --depth 1 --branch release-77-1 https://github.com/unicode-org/icu.git "${REPO_ROOT}/icu"
 else
     echo -e "${GREEN}Using existing ICU source at ${REPO_ROOT}/icu${NC}"
 fi

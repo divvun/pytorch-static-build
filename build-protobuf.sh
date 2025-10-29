@@ -239,8 +239,8 @@ INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/protobuf"
 
 # Clone protobuf if not already present
 if [ ! -d "${PROTOBUF_SOURCE_DIR}" ]; then
-    echo -e "${YELLOW}Cloning Protocol Buffers from GitHub...${NC}"
-    git clone --depth 1 --branch main https://github.com/protocolbuffers/protobuf.git "${PROTOBUF_SOURCE_DIR}"
+    echo -e "${YELLOW}Cloning Protocol Buffers from GitHub (tag v33.0)...${NC}"
+    git clone --depth 1 --branch v33.0 https://github.com/protocolbuffers/protobuf.git "${PROTOBUF_SOURCE_DIR}"
 else
     echo -e "${GREEN}Using existing Protocol Buffers source at ${PROTOBUF_SOURCE_DIR}${NC}"
 fi

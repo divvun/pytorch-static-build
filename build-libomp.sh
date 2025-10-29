@@ -220,8 +220,8 @@ INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/libomp"
 
 # Clone LLVM project if not already present
 if [ ! -d "${LLVM_PROJECT_DIR}" ]; then
-    echo -e "${YELLOW}Cloning LLVM project (shallow clone)...${NC}"
-    git clone --depth 1 https://github.com/llvm/llvm-project.git "${LLVM_PROJECT_DIR}"
+    echo -e "${YELLOW}Cloning LLVM project (tag llvmorg-21.1.4)...${NC}"
+    git clone --depth 1 --branch llvmorg-21.1.4 https://github.com/llvm/llvm-project.git "${LLVM_PROJECT_DIR}"
 else
     echo -e "${GREEN}LLVM project already exists at ${LLVM_PROJECT_DIR}${NC}"
 fi

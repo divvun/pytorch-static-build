@@ -193,8 +193,8 @@ $InstallPrefix = Join-Path $RepoRoot "target\$Target\libomp"
 
 # Clone LLVM project if not already present
 if (-not (Test-Path $LLVMProjectDir)) {
-    Write-Host "+++ :arrow_down: Cloning LLVM project (shallow clone)"
-    & git clone --depth 1 https://github.com/llvm/llvm-project.git $LLVMProjectDir
+    Write-Host "+++ :arrow_down: Cloning LLVM project (tag llvmorg-21.1.4)"
+    & git clone --depth 1 --branch llvmorg-21.1.4 https://github.com/llvm/llvm-project.git $LLVMProjectDir
 } else {
     Write-Host "LLVM project already exists at $LLVMProjectDir"
 }
