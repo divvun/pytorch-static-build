@@ -165,8 +165,8 @@ $InstallPrefix = Join-Path $RepoRoot "target\$Target\icu4c"
 
 # Clone ICU if not already present
 if (-not (Test-Path $ICURoot)) {
-    Write-Host "Cloning ICU from GitHub (tag release-77-1)..." -ForegroundColor Yellow
-    & git clone --depth 1 --branch release-77-1 https://github.com/unicode-org/icu.git $ICURoot
+    Write-Host "Cloning ICU from GitHub..." -ForegroundColor Yellow
+    & git clone --depth 1 https://github.com/unicode-org/icu.git $ICURoot
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Error: Failed to clone ICU repository" -ForegroundColor Red
         exit 1
@@ -233,10 +233,10 @@ try {
     $Platform = "x64"
     $SkipUWP = "true"
 
-    & msbuild icu4c\source\stubdata\stubdata.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
-    & msbuild icu4c\source\common\common.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
-    & msbuild icu4c\source\i18n\i18n.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
-    & msbuild icu4c\source\io\io.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
+    & msbuild stubdata\stubdata.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
+    & msbuild common\common.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
+    & msbuild i18n\i18n.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
+    & msbuild io\io.vcxproj /p:Configuration=$BuildType /p:Platform=$Platform /p:SkipUWP=$SkipUWP /p:PreprocessorDefinitions="U_STATIC_IMPLEMENTATION=1" /m
     
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Error: MSBuild failed with exit code $LASTEXITCODE" -ForegroundColor Red
