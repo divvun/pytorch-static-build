@@ -30,7 +30,7 @@ BUILD_TYPE="MinSizeRel"  # MinSizeRel, Release, Debug, RelWithDebInfo
 CLEAN_BUILD=1
 USE_PYTORCH_METAL=0
 USE_COREML_DELEGATE=0
-BUILD_LITE_INTERPRETER=0
+BUILD_LITE_INTERPRETER=1
 ENABLE_BITCODE=0
 VERBOSE=0
 
@@ -255,7 +255,7 @@ CMAKE_ARGS=()
 PYTHON_PREFIX_PATH=$($PYTHON -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
 # Add all dependency prefixes to CMAKE_PREFIX_PATH
 PROTOBUF_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/protobuf"
-CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${PROTOBUF_PREFIX};${PYTHON_PREFIX_PATH}")
+CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${PROTOBUF_PREFIX};${PYTHON_PREFIX_PATH}")
 CMAKE_ARGS+=("-DPython_EXECUTABLE=$($PYTHON -c 'import sys; print(sys.executable)')")
 
 # Use Ninja
@@ -337,17 +337,16 @@ CMAKE_ARGS+=("-DUSE_KINETO=OFF")
 CMAKE_ARGS+=("-DUSE_PROF=OFF")
 CMAKE_ARGS+=("-DINTERN_BUILD_MOBILE=ON")
 CMAKE_ARGS+=("-DUSE_INDUCTOR=OFF")
-CMAKE_ARGS+=("-DC10_MOBILE")
+CMAKE_ARGS+=("-DC10_MOBILE=ON")
 CMAKE_ARGS+=("-DUSE_LITE_AOTI=OFF")
 
 # Performance: use mimalloc allocator
 CMAKE_ARGS+=("-DUSE_MIMALLOC=ON")
 
-# Disable QNNPACK for watchOS
+# Disable NNPACK for all platforms, QNNPACK only for watchOS
+CMAKE_ARGS+=("-DUSE_NNPACK=OFF")
 if [ "$IOS_PLATFORM" = "WATCHOS" ]; then
     CMAKE_ARGS+=("-DUSE_PYTORCH_QNNPACK=OFF")
-else
-    CMAKE_ARGS+=("-DUSE_NNPACK=OFF")
 fi
 
 # Threading
@@ -411,11 +410,6 @@ NCPU=$(sysctl -n hw.ncpu)
 # Build and install
 echo -e "${YELLOW}Building with ${NCPU} parallel jobs...${NC}"
 "${CMAKE_PATH}" --build . --target install -- "-j${NCPU}"
-
-# Copy all build artifacts to sysroot
-echo -e "${YELLOW}Copying libraries and headers to sysroot...${NC}"
-cp -rf "${BUILD_ROOT}/lib/"* "${INSTALL_PREFIX}/lib/" 2>/dev/null || true
-cp -rf "${BUILD_ROOT}/include/"* "${INSTALL_PREFIX}/include/" 2>/dev/null || true
 
 echo ""
 echo -e "${GREEN}iOS build completed successfully!${NC}"
