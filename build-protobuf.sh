@@ -238,10 +238,8 @@ BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/protobuf"
 INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/protobuf"
 
 # Clone protobuf (remove existing directory first)
-if [ -d "${PROTOBUF_SOURCE_DIR}" ]; then
-    echo -e "${YELLOW}Removing existing protobuf directory...${NC}"
-    rm -rf "${PROTOBUF_SOURCE_DIR}"
-fi
+echo -e "${YELLOW}Removing existing protobuf directory (if any)...${NC}"
+rm -rf "${PROTOBUF_SOURCE_DIR}"
 echo -e "${YELLOW}Cloning Protocol Buffers from GitHub (tag v33.0)...${NC}"
 git clone --depth 1 --branch v33.0 https://github.com/protocolbuffers/protobuf.git "${PROTOBUF_SOURCE_DIR}"
 

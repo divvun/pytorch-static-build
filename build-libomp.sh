@@ -219,10 +219,8 @@ BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/openmp"
 INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/libomp"
 
 # Clone LLVM project (remove existing directory first)
-if [ -d "${LLVM_PROJECT_DIR}" ]; then
-    echo -e "${YELLOW}Removing existing LLVM project directory...${NC}"
-    rm -rf "${LLVM_PROJECT_DIR}"
-fi
+echo -e "${YELLOW}Removing existing LLVM project directory (if any)...${NC}"
+rm -rf "${LLVM_PROJECT_DIR}"
 echo -e "${YELLOW}Cloning LLVM project (tag llvmorg-21.1.4)...${NC}"
 git clone --depth 1 --branch llvmorg-21.1.4 https://github.com/llvm/llvm-project.git "${LLVM_PROJECT_DIR}"
 

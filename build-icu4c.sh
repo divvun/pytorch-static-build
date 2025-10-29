@@ -233,10 +233,8 @@ BUILD_ROOT="${REPO_ROOT}/target/${TARGET_TRIPLE}/build/icu"
 INSTALL_PREFIX="${REPO_ROOT}/target/${TARGET_TRIPLE}/icu4c"
 
 # Clone ICU (remove existing directory first)
-if [ -d "${REPO_ROOT}/icu" ]; then
-    echo -e "${YELLOW}Removing existing ICU directory...${NC}"
-    rm -rf "${REPO_ROOT}/icu"
-fi
+echo -e "${YELLOW}Removing existing ICU directory (if any)...${NC}"
+rm -rf "${REPO_ROOT}/icu"
 echo -e "${YELLOW}Cloning ICU from GitHub (tag release-77-1)...${NC}"
 git clone --depth 1 --branch release-77-1 https://github.com/unicode-org/icu.git "${REPO_ROOT}/icu"
 
